@@ -89,6 +89,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            /* Centraliza horizontalmente. Para alinhar a dock embaixo, o elemento da dock fará isso com `bottom: 30px;` */
             justify-content: flex-end; /* Alinha a dock na parte inferior no desktop */
             padding-bottom: 20px; /* Espaço para a dock não colar na borda no desktop */
             height: 100vh; /* Ocupa toda a altura da viewport */
@@ -254,9 +255,9 @@
             overflow-y: hidden;
             max-width: 90%; /* Desktop max width */
             position: fixed; /* Changed from absolute for better control with JS logic initially */
-            bottom: 30px; /* Desktop positioning */
+            top: 50%; /* Posição vertical central */
             left: 50%; /* Desktop positioning */
-            transform: translateX(-50%); /* Desktop positioning */
+            transform: translate(-50%, -50%); /* Centraliza horizontal e verticalmente */
             align-items: center; /* Vertically center icons */
             height: auto; /* Desktop auto height */
         }
@@ -1129,7 +1130,7 @@
                 <button data-tab="todolist" class="notepad-tab px-4 py-2">Lista de Tarefas</button>
             </div>
             <div id="notepad-content" class="notepad-content-area active p-3">
-                <textarea id="notepad-textarea" class="flex-grow w-full p-2 rounded bg-black bg-opacity-20 text-[var(--theme-text-general)] border border-[var(--theme-window-border)] resize-none outline-none focus:border-[var(--theme-accent)]" placeholder="Suas anotações..."></textarea>
+                <textarea id="notepad-textarea" class="flex-grow w-full p-2 rounded bg-black bg-opacity=20 text-[var(--theme-text-general)] border border-[var(--theme-window-border)] resize-none outline-none focus:border-[var(--theme-accent)]" placeholder="Suas anotações..."></textarea>
                 <div class="mt-2 flex gap-2">
                     <button id="save-note-btn" class="bg-purple-700 text-white px-3 py-1.5 rounded-md text-sm hover:bg-purple-800 flex-1">Salvar Nota</button>
                     <button id="clear-note-btn" class="bg-gray-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-gray-700 flex-1">Limpar Nota</button>
@@ -1489,23 +1490,23 @@
         // MÓDULO DE GERENCIAMENTO DE JANELAS                                            //
         // ----------------------------------------------------------------------------- //
         const WindowManager = {
-            init: () => {
-                DOM.allWindows.forEach(winEl => WindowManager.setupWindowControls(winEl));
-                document.body.addEventListener('mousedown', (e) => { const windowClicked = e.target.closest('.window'); if (windowClicked) WindowManager.bringToFront(windowClicked); });
-                document.body.addEventListener('touchstart', (e) => { const windowClicked = e.target.closest('.window'); if (windowClicked) WindowManager.bringToFront(windowClicked); }, {passive: true});
+            init() {
+                DOM.allWindows.forEach(winEl => this.setupWindowControls(winEl));
+                document.body.addEventListener('mousedown', (e) => { const windowClicked = e.target.closest('.window'); if (windowClicked) this.bringToFront(windowClicked); });
+                document.body.addEventListener('touchstart', (e) => { const windowClicked = e.target.closest('.window'); if (windowClicked) this.bringToFront(windowClicked); }, {passive: true});
             },
-            setupWindowControls: (windowEl) => {
+            setupWindowControls(windowEl) {
                 const header = windowEl.querySelector('.window-header');
                 const closeButton = windowEl.querySelector('.close-button');
                 const minimizeButton = windowEl.querySelector('.minimize-button');
                 const maximizeButton = windowEl.querySelector('.maximize-button');
-                if (header) WindowManager.makeWindowDraggable(windowEl, header);
+                if (header) this.makeWindowDraggable(windowEl, header);
                 const stopPropagationForButton = (e) => e.stopPropagation();
-                if (closeButton) { closeButton.addEventListener('click', (e) => { e.stopPropagation(); WindowManager.close(windowEl); }); closeButton.addEventListener('mousedown', stopPropagationForButton); closeButton.addEventListener('touchstart', stopPropagationForButton, {passive: true});}
-                if (minimizeButton) { minimizeButton.addEventListener('click', (e) => { e.stopPropagation(); WindowManager.minimize(windowEl); }); minimizeButton.addEventListener('mousedown', stopPropagationForButton); minimizeButton.addEventListener('touchstart', stopPropagationForButton, {passive: true});}
-                if (maximizeButton) { maximizeButton.addEventListener('click', (e) => { e.stopPropagation(); WindowManager.toggleMaximize(windowEl, maximizeButton); }); maximizeButton.addEventListener('mousedown', stopPropagationForButton); maximizeButton.addEventListener('touchstart', stopPropagationForButton, {passive: true});}
+                if (closeButton) { closeButton.addEventListener('click', (e) => { e.stopPropagation(); this.close(windowEl); }); closeButton.addEventListener('mousedown', stopPropagationForButton); closeButton.addEventListener('touchstart', stopPropagationForButton, {passive: true});}
+                if (minimizeButton) { minimizeButton.addEventListener('click', (e) => { e.stopPropagation(); this.minimize(windowEl); }); minimizeButton.addEventListener('mousedown', stopPropagationForButton); minimizeButton.addEventListener('touchstart', stopPropagationForButton, {passive: true});}
+                if (maximizeButton) { maximizeButton.addEventListener('click', (e) => { e.stopPropagation(); this.toggleMaximize(windowEl, maximizeButton); }); maximizeButton.addEventListener('mousedown', stopPropagationForButton); maximizeButton.addEventListener('touchstart', stopPropagationForButton, {passive: true});}
             },
-            open: (windowEl) => {
+            open(windowEl) {
                 if (!windowEl) return;
                 const windowId = windowEl.id;
                 const savedState = AppState.windowStates[windowId];
@@ -1556,31 +1557,31 @@
                     windowEl.style.transform = 'scale(1) translateY(0px)'; // Example, can be adjusted
                 }
 
-                WindowManager.bringToFront(windowEl);
+                this.bringToFront(windowEl);
                 SoundManager.playOpen();
                 if (!AppState.openWindows[windowId]) DesktopManager.createTaskbarIcon(windowEl);
                 DesktopManager.updateTaskbarActiveState(windowId);
             },
-            close: (windowEl) => {
-                if (!windowEl) return; SoundManager.playClose(); WindowManager.saveState(windowEl);
+            close(windowEl) {
+                if (!windowEl) return; SoundManager.playClose(); this.saveState(windowEl);
                 if (windowEl.id === 'streamos-window') StreamOSGames.stopCurrentGame();
                 windowEl.style.opacity = '0';
                 windowEl.style.transform = (window.innerWidth < 768 && windowEl.id !== 'dokas-assistant-prompt-window') ? 'scale(0.95) translateY(0px)' : 'scale(0.95) translateY(10px)'; // Adjusted transform for mobile exit
                 setTimeout(() => {
                     windowEl.style.display = 'none'; const windowId = windowEl.id;
                     if (AppState.openWindows[windowId]) { if (AppState.openWindows[windowId].taskbarIcon) AppState.openWindows[windowId].taskbarIcon.remove(); delete AppState.openWindows[windowId]; }
-                    if (AppState.activeWindow && AppState.activeWindow.id === windowId) { AppState.activeWindow = null; DesktopManager.updateTaskbarActiveState(null); WindowManager.applyFocusStyles(); }
+                    if (AppState.activeWindow && AppState.activeWindow.id === windowId) { AppState.activeWindow = null; DesktopManager.updateTaskbarActiveState(null); this.applyFocusStyles(); }
                 }, 250);
             },
-            minimize: (windowEl) => {
-                if (!windowEl) return; SoundManager.playClose(); WindowManager.saveState(windowEl);
+            minimize(windowEl) {
+                if (!windowEl) return; SoundManager.playClose(); this.saveState(windowEl);
                 windowEl.style.opacity = '0';
                 windowEl.style.transform = (window.innerWidth < 768 && windowEl.id !== 'dokas-assistant-prompt-window') ? 'scale(0.95) translateY(0px)' : 'scale(0.95) translateY(10px)';
                 setTimeout(() => { windowEl.style.display = 'none'; }, 250);
                 if (AppState.activeWindow && AppState.activeWindow.id === windowEl.id) { AppState.activeWindow.classList.remove('active-border'); AppState.activeWindow = null; }
-                DesktopManager.updateTaskbarActiveState(null); WindowManager.applyFocusStyles();
+                DesktopManager.updateTaskbarActiveState(null); this.applyFocusStyles();
             },
-            toggleMaximize: (windowEl, buttonEl) => {
+            toggleMaximize(windowEl, buttonEl) {
                 if (!windowEl) return; const windowId = windowEl.id;
                 if (!AppState.openWindows[windowId]) AppState.openWindows[windowId] = {};
                 let currentOriginalState = AppState.openWindows[windowId].originalState || {};
@@ -1610,16 +1611,17 @@
                         if (buttonEl) buttonEl.innerHTML = '<i class="far fa-clone"></i>';
                     }
                 }
-                WindowManager.bringToFront(windowEl);
+                this.bringToFront(windowEl);
             },
-            bringToFront: (windowEl) => {
+            bringToFront(windowEl) {
                 if (!windowEl || (AppState.activeWindow && AppState.activeWindow.id === windowEl.id && windowEl.style.zIndex == AppState.zIndexCounter)) return;
                 AppState.zIndexCounter++; windowEl.style.zIndex = AppState.zIndexCounter;
                 document.querySelectorAll('.window').forEach(win => { win.classList.remove('active-border'); win.classList.remove('window-dimmed'); });
                 windowEl.classList.add('active-border'); AppState.activeWindow = windowEl;
-                DesktopManager.updateTaskbarActiveState(windowEl.id); WindowManager.applyFocusStyles();
+                DesktopManager.updateTaskbarActiveState(windowEl.id);
+                this.applyFocusStyles();
             },
-            applyFocusStyles: () => {
+            applyFocusStyles() {
                 const isActiveWindowFocusType = AppState.activeWindow && Config.focusWindowIds.includes(AppState.activeWindow.id);
                 document.querySelectorAll('.window').forEach(win => {
                     if (win.style.display === 'none') return;
@@ -1629,7 +1631,7 @@
                     } else win.classList.remove('window-dimmed');
                 });
             },
-            saveState: (windowEl) => {
+            saveState(windowEl) {
                 if (!windowEl || !windowEl.id || window.innerWidth < 768) return; // Don't save state on mobile as layout is fixed
                 if (windowEl.dataset.isMaximized === 'true') {
                     const originalState = AppState.openWindows[windowEl.id]?.originalState;
@@ -1637,14 +1639,14 @@
                 } else AppState.windowStates[windowEl.id] = { width: windowEl.style.width, height: windowEl.style.height, top: windowEl.style.top, left: windowEl.style.left };
                 Utils.saveToLocalStorage(Config.localStorageKeys.windowStates, AppState.windowStates);
             },
-            makeWindowDraggable: (windowEl, headerEl) => {
+            makeWindowDraggable(windowEl, headerEl) {
                 let isDragging = false; let offsetX, offsetY;
                 const onMove = (clientX, clientY) => { if (!isDragging) return; windowEl.style.left = (clientX - offsetX) + 'px'; windowEl.style.top = (clientY - offsetY) + 'px'; };
                 const onEndDrag = () => {
                     if (!isDragging) return; isDragging = false; headerEl.style.cursor = 'grab';
                     document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp);
                     document.removeEventListener('touchmove', onTouchMove); document.removeEventListener('touchend', onTouchEnd);
-                    if (windowEl.dataset.isMaximized !== 'true' && window.innerWidth >= 768) WindowManager.saveState(windowEl); // Only save if not maximized and on desktop
+                    if (windowEl.dataset.isMaximized !== 'true' && window.innerWidth >= 768) this.saveState(windowEl); // Only save if not maximized and on desktop
                 };
                 const onMouseMove = (e) => onMove(e.clientX, e.clientY); const onMouseUp = onEndDrag;
                 const onTouchMove = (e) => { if (e.touches.length === 1) onMove(e.touches[0].clientX, e.touches[0].clientY); if (e.cancelable) e.preventDefault(); }; const onTouchEnd = onEndDrag;
@@ -1652,7 +1654,7 @@
                     if (event.target.closest('.window-header-button') || window.innerWidth < 768) return; // No drag on mobile or on buttons
                     if (windowEl.dataset.isMaximized === 'true') return;
                     isDragging = true; offsetX = clientX - windowEl.getBoundingClientRect().left; offsetY = clientY - windowEl.getBoundingClientRect().top;
-                    headerEl.style.cursor = 'grabbing'; WindowManager.bringToFront(windowEl);
+                    headerEl.style.cursor = 'grabbing'; this.bringToFront(windowEl);
                     if (event.type === 'mousedown') { document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onMouseUp); }
                     else { document.addEventListener('touchmove', onTouchMove, { passive: false }); document.addEventListener('touchend', onTouchEnd); }
                 };
@@ -1725,6 +1727,7 @@
                     draw() { DOM.particlesCtx.beginPath(); DOM.particlesCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false); DOM.particlesCtx.fillStyle = this.color; DOM.particlesCtx.fill(); }
                     update() {
                         this.x += (Math.random() - 0.5) * (this.weight * 0.2); this.y += (Math.random() - 0.5) * (this.weight * 0.2);
+                        // Fix: Changed 'dyMy' to 'dyMouse'
                         let dxMouse = AppState.mouse.x - this.x; let dyMouse = AppState.mouse.y - this.y; let distanceMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
                         if (distanceMouse < AppState.mouse.radius) {
                             let forceDirectionX = dxMouse / distanceMouse; let forceDirectionY = dyMouse / distanceMouse;
