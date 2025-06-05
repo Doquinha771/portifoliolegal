@@ -1,0 +1,2956 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DokasOS - Portfólio Digital Otimizado</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        /* Estilos CSS permanecem em grande parte os mesmos, pois já utilizam variáveis e Tailwind.
+           Pequenos ajustes podem ser feitos para consistência, mas a estrutura principal é mantida.
+           A otimização principal está no JavaScript. */
+        :root {
+            /* Paleta base (será sobrescrita pelo JS, mas serve de fallback) */
+            --theme-primary: #581c87; /* Roxo mais vibrante */
+            --theme-secondary: #3b0764;
+            --theme-accent: #a855f7;    /* Lilás para acentos */
+            --theme-text-on-primary: #f3e8ff; /* Texto quase branco em fundos primários */
+            --theme-text-general: #d1d5db; /* Cinza claro para texto geral */
+            --theme-text-general-muted: #9ca3af; /* Cinza mais suave */
+
+            --theme-window-bg: rgba(30, 30, 40, 0.88); /* Fundo da janela com transparência */
+            --theme-window-border: rgba(120, 120, 150, 0.25);
+            --theme-window-header-bg-start: rgba(50, 50, 70, 0.75);
+            --theme-window-header-bg-end: rgba(40, 40, 60, 0.85);
+
+            --theme-taskbar-bg: rgba(25, 25, 35, 0.8);
+            --theme-taskbar-icon-color: #a0aec0;
+            --theme-taskbar-icon-active-bg: rgba(167, 139, 250, 0.2); /* Usando --theme-accent com alfa */
+            --theme-taskbar-icon-active-border: var(--theme-accent);
+            --theme-taskbar-icon-active-color: var(--theme-accent);
+            --theme-accent-shadow: rgba(167, 139, 250, 0.25);
+
+            --theme-icon-dock-bg: rgba(35, 35, 50, 0.85); /* Fundo da dock mais escuro e com mais alfa */
+            --theme-icon-dock-border: rgba(167, 139, 250, 0.3); /* Borda sutil com cor de destaque */
+            --theme-desktop-icon-bg: rgba(65, 65, 85, 0.6); /* Fundo do ícone na dock */
+            --theme-desktop-icon-bg-hover: rgba(85, 85, 105, 0.8);
+            --theme-desktop-icon-color: #e5e7eb;
+            --theme-desktop-icon-border-hover: rgba(167, 139, 250, 0.4);
+
+            --theme-spotify-bg: rgba(20, 20, 25, 0.9);
+            --theme-spotify-text: #a0aec0;
+            --theme-spotify-header-start: var(--theme-secondary);
+            --theme-spotify-header-end: var(--theme-primary);
+            --theme-spotify-item-bg: rgba(40, 40, 50, 0.8);
+            --theme-spotify-item-bg-hover: rgba(55, 55, 70, 0.9);
+            --theme-spotify-item-text: #e5e7eb;
+            --theme-spotify-item-link: var(--theme-accent);
+
+            --theme-card-bg: rgba(42, 42, 52, 0.9);
+            --theme-card-title: #e5e7eb;
+            --theme-card-text: #b8c2cc;
+            --theme-card-secondary-text: #929eb0;
+
+            --theme-info-box-bg: rgba(35, 35, 45, 0.9);
+            --theme-info-box-title: #e5e7eb;
+            --theme-info-box-text: #b8c2cc;
+
+            --theme-button-bg: var(--theme-primary);
+            --theme-button-text: var(--theme-text-on-primary);
+            --theme-button-hover-bg: var(--theme-secondary);
+            --main-font-family: 'Inter', sans-serif;
+        }
+
+        @keyframes subtleGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        body {
+            font-family: var(--main-font-family);
+            font-weight: 400;
+            overflow: hidden;
+            background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #1a1a2e);
+            background-size: 400% 400%;
+            animation: subtleGradient 25s ease infinite;
+            color: var(--theme-text-general);
+        }
+        .desktop-bg {
+            background-size: cover;
+            background-position: center;
+            filter: brightness(0.75) saturate(1.1);
+            transition: background-image 0.5s ease-in-out, background-color 0.3s ease;
+            position: relative;
+            backdrop-filter: blur(2px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end; /* Alinha a dock na parte inferior */
+            padding-bottom: 20px; /* Espaço para a dock não colar na borda */
+            height: 100vh;
+        }
+
+        #matrix-canvas, #particles-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        #matrix-canvas { z-index: -2; }
+        #particles-canvas { z-index: -1; }
+
+
+        .window {
+            position: absolute;
+            width: calc(100vw - 32px);
+            height: calc(70vh);
+            top: 16px;
+            left: 16px;
+            min-width: 280px;
+            min-height: 180px;
+            resize: none;
+            overflow: hidden;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--theme-window-border);
+            background-color: var(--theme-window-bg);
+            backdrop-filter: blur(12px) saturate(150%);
+            color: var(--theme-text-general);
+            z-index: 100;
+            transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                        background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease,
+                        width 0.15s ease-out, height 0.15s ease-out, filter 0.3s ease;
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+            display: none;
+            flex-direction: column;
+            border-radius: 10px;
+        }
+        .window-dimmed {
+            opacity: 0.65 !important;
+            filter: grayscale(50%) brightness(0.85) blur(1px);
+            transform: scale(0.99) !important;
+        }
+
+        @media (min-width: 768px) {
+            .window {
+                resize: both;
+            }
+        }
+
+        .window-header {
+            cursor: grab;
+            background: linear-gradient(to bottom, var(--theme-window-header-bg-start), var(--theme-window-header-bg-end));
+            color: var(--theme-text-on-primary);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--theme-window-border);
+            padding: 0.6rem 0.9rem;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            transition: background 0.3s ease;
+            font-weight: 500;
+            font-family: var(--main-font-family);
+        }
+        .window-header-button {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background-color 0.2s, transform 0.1s;
+            border-radius: 6px;
+            width: 28px; height: 28px;
+        }
+        .window-header-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.05);
+        }
+        .window-header-button.close:hover {
+            background-color: #E74C3C;
+        }
+        .window-header-button i {
+            font-size: 0.7rem;
+        }
+
+
+        .window-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1.25rem;
+        }
+        .window-content p,
+        .window-content span, .window-content li {
+            color: var(--theme-text-general);
+            line-height: 1.6;
+        }
+        .window-content div:not(.grid):not(.flex):not(.project-card-themed):not(.info-box-themed):not(.friend-card):not(.streamos-game-list):not(.streamos-game-item):not(.streamos-game-display) {
+             color: var(--theme-text-general);
+        }
+         .window-content h1, .window-content h2, .window-content h3:not(.info-box-themed h3):not(.project-card-themed h3):not(.friend-card h3):not(.streamos-game-item h3),
+         .window-content h4, .window-content h5, .window-content h6 {
+            color: var(--theme-text-on-primary);
+            font-weight: 600;
+            font-family: var(--main-font-family);
+         }
+         .window-content a {
+            color: var(--theme-accent);
+            text-decoration: none;
+            font-weight: 500;
+         }
+         .window-content a:hover {
+            text-decoration: underline;
+            filter: brightness(1.15);
+         }
+
+
+        .window-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+        }
+
+        #spotify-window {
+            background-color: var(--theme-spotify-bg);
+            backdrop-filter: blur(16px) saturate(180%);
+            color: var(--theme-spotify-text);
+        }
+        #spotify-window .window-header {
+             background: linear-gradient(to bottom, var(--theme-spotify-header-start), var(--theme-spotify-header-end));
+        }
+        #spotify-window .window-content h2 {
+            color: #FFFFFF;
+            font-weight: 700;
+        }
+        .spotify-playlist-item {
+            background-color: var(--theme-spotify-item-bg);
+            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+        .spotify-playlist-item:hover {
+            background-color: var(--theme-spotify-item-bg-hover);
+            transform: translateY(-2px);
+        }
+        .spotify-playlist-item h3 {
+            color: var(--theme-spotify-item-text);
+            font-weight: 600;
+        }
+        .spotify-playlist-item a {
+            color: var(--theme-spotify-item-link);
+        }
+         .spotify-playlist-item a:hover {
+            filter: brightness(1.1);
+        }
+
+        #icon-dock {
+            display: flex;
+            gap: 18px;
+            padding: 15px 25px;
+            background-color: var(--theme-icon-dock-bg);
+            backdrop-filter: blur(12px) saturate(170%);
+            border-radius: 22px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.45), inset 0 0 0 1px var(--theme-icon-dock-border); /* Adicionando borda interna */
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            z-index: 150;
+            overflow-x: auto;
+            max-width: 90%;
+            position: fixed;
+            bottom: 30px; /* Posicionado na parte inferior */
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #audio-visualizer-container {
+            width: 80%;
+            max-width: 600px;
+            height: 90px;
+            position: fixed;
+            bottom: 120px; /* Ajustado para ficar acima da nova dock */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        #audio-visualizer {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+
+        .icon-item {
+            width: 90px;
+            height: 100px;
+            font-size: 0.8rem;
+            padding: 10px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--theme-desktop-icon-color);
+            cursor: pointer;
+            border-radius: 12px;
+            background-color: var(--theme-desktop-icon-bg);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease-out, box-shadow 0.2s ease-out, color 0.2s ease-out, border-color 0.2s ease-out;
+            border: 1px solid transparent;
+            user-select: none;
+            flex-shrink: 0;
+        }
+
+        .icon-item i {
+            font-size: 2.8rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .icon-item span {
+            display: block;
+            line-height: 1.2;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        .icon-item:hover {
+            transform: translateY(-4px) scale(1.08);
+            background-color: var(--theme-desktop-icon-bg-hover);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-color: var(--theme-desktop-icon-border-hover);
+        }
+
+
+        .terminal-output {
+            background-color: #0A0A0A;
+            color: #00FF41;
+            font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace;
+            white-space: pre-wrap; overflow-y: auto; border-radius: 0.5rem; padding: 1rem;
+            line-height: 1.5;
+        }
+        .terminal-input {
+            background-color: #0A0A0A;
+            color: #00FF41;
+            font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace;
+            border: none; outline: none; width: calc(100% - 1.5rem); padding: 0.5rem; margin-left: 0.5rem;
+        }
+        .window.active-border {
+            border: 2px solid var(--theme-accent);
+            box-shadow: 0 16px 40px var(--theme-accent-shadow, rgba(167, 139, 250, 0.4));
+        }
+
+        #taskbar {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            left: auto;
+            top: auto;
+            transform: none;
+            width: auto;
+            height: 55px;
+            max-width: calc(100% - 40px);
+            background-color: var(--theme-taskbar-bg);
+            backdrop-filter: blur(10px) saturate(150%);
+            transition: all 0.3s ease-in-out; z-index: 95;
+            padding: 6px 10px;
+            border-radius: 12px;
+            box-shadow: 0 -3px 15px rgba(0, 0, 0, 0.35), inset 0 1px 0px rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .taskbar-icon, .taskbar-audio-control-button {
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center; justify-content: center;
+            background-color: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.15s;
+            border: 1px solid transparent;
+            color: var(--theme-taskbar-icon-color);
+        }
+        .taskbar-icon:hover, .taskbar-audio-control-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+
+        .taskbar-icon.active {
+            background-color: var(--theme-taskbar-icon-active-bg);
+            border: 1px solid var(--theme-taskbar-icon-active-border);
+            box-shadow: 0 0 8px var(--theme-accent-shadow, rgba(167, 139, 250, 0.3));
+            transform: scale(1.03);
+        }
+        .taskbar-icon.active i, .taskbar-audio-control-button.active i {
+            color: var(--theme-taskbar-icon-active-color);
+        }
+
+
+        #audio-popup {
+            display: none;
+            position: fixed;
+            background-color: var(--theme-taskbar-bg);
+            backdrop-filter: blur(10px) saturate(150%);
+            border: 1px solid var(--theme-window-border);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.4);
+            z-index: 96;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
+        }
+        #audio-popup.show {
+            display: flex;
+        }
+        #volume-slider {
+            width: 110px;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255,255,255,0.15);
+            outline: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        #volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--theme-accent);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid var(--theme-taskbar-bg);
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+        #volume-slider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: var(--theme-accent);
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid var(--theme-taskbar-bg);
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+
+
+        #taskbar-clock {
+            color: var(--theme-text-general-muted); font-size: 0.8rem;
+            margin-left: 8px;
+            padding-left: 0.75rem;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            line-height: 1.2; text-align: right;
+            font-weight: 500;
+            writing-mode: horizontal-tb;
+            transform: none;
+        }
+
+        .taskbar-weather-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+            color: var(--theme-text-general-muted);
+            padding: 0 8px;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .taskbar-weather-item i {
+            font-size: 0.9rem;
+            color: var(--theme-accent);
+        }
+
+
+        .bg-purple-700 { background-color: var(--theme-button-bg); color: var(--theme-button-text); border-radius: 6px; }
+        .hover\:bg-purple-800:hover { background-color: var(--theme-button-hover-bg); }
+        .text-purple-600 { color: var(--theme-accent); }
+        .border-purple-400 { border-color: var(--theme-primary); }
+
+        .project-card-themed {
+            background-color: var(--theme-card-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .project-card-themed h3, .project-card-themed .font-bold {
+            color: var(--theme-card-title);
+            font-weight: 600;
+        }
+        .project-card-themed p {
+            color: var(--theme-card-secondary-text);
+            line-height: 1.5;
+        }
+        .project-card-themed .bg-purple-700 { background-color: var(--theme-button-bg); color: var(--theme-button-text); }
+        .project-card-themed .hover\:bg-purple-800:hover { background-color: var(--theme-button-hover-bg); }
+        .project-card-themed .bg-gray-800 { background-color: var(--theme-secondary); color: var(--theme-text-on-primary); border-radius: 6px; }
+        .project-card-themed .hover\:bg-gray-900:hover { background-color: var(--theme-primary); }
+
+        .info-box-themed {
+            background-color: var(--theme-info-box-bg);
+            border-radius: 8px;
+        }
+        .info-box-themed h3 {
+            color: var(--theme-info-box-title);
+            font-weight: 600;
+        }
+        .info-box-themed p {
+            color: var(--theme-info-box-text);
+            line-height: 1.5;
+        }
+
+        #youtube-player-container {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
+
+        .window-content.flex-column-gap-1rem {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        #browser-url-input, #image-gallery-url-input {
+            background-color: rgba(0,0,0,0.2);
+            border: 1px solid var(--theme-window-border);
+            color: var(--theme-text-general);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            outline: none;
+        }
+        #browser-url-input:focus, #image-gallery-url-input:focus {
+            border-color: var(--theme-accent);
+        }
+        #browser-iframe-container {
+            flex-grow: 1;
+            background-color: #000;
+            border-radius: 6px;
+            overflow: hidden;
+            min-height: 200px;
+        }
+        #browser-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        #file-explorer-list { list-style: none; padding: 0; }
+        #file-explorer-list li {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid var(--theme-window-border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        #file-explorer-list li:last-child { border-bottom: none; }
+        #file-explorer-list li:hover { background-color: rgba(255,255,255,0.05); }
+
+        /* Notepad com abas */
+        .notepad-tabs { display: flex; margin-bottom: 0.5rem; border-bottom: 1px solid var(--theme-window-border); }
+        .notepad-tab { padding: 0.5rem 1rem; cursor: pointer; color: var(--theme-text-general-muted); }
+        .notepad-tab.active { color: var(--theme-accent); border-bottom: 2px solid var(--theme-accent); font-weight: 500; }
+        .notepad-content-area { display: none; flex-grow: 1; flex-direction: column; }
+        .notepad-content-area.active { display: flex; }
+
+        #notepad-textarea-container { flex-grow: 1; display: flex; flex-direction: column; }
+        #notepad-textarea {
+            flex-grow: 1; width: 100%; padding: 0.5rem;
+            background-color: rgba(0,0,0,0.15); color: var(--theme-text-general);
+            border: 1px solid transparent; resize: none; outline: none;
+            border-radius: 4px;
+        }
+        #notepad-textarea:focus { border-color: var(--theme-accent); }
+        #todo-input-container { display: flex; margin-bottom: 0.5rem; }
+        #todo-input {
+            flex-grow: 1;
+            background-color: rgba(0,0,0,0.2);
+            border: 1px solid var(--theme-window-border);
+            color: var(--theme-text-general);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            outline: none;
+        }
+        #todo-list { list-style: none; padding: 0; max-height: 200px; overflow-y: auto; flex-grow: 1;}
+        #todo-list li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 0.2rem;
+            border-bottom: 1px solid var(--theme-window-border);
+            cursor: pointer;
+        }
+        #todo-list li.completed span { text-decoration: line-through; color: var(--theme-text-general-muted); }
+        #todo-list li button {
+            background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 0.9rem; padding: 0 0.3rem;
+        }
+        #todo-list li button:hover { color: #c0392b; }
+
+        /* Appearance Settings (agora parte da Personalizar) */
+        .color-input-group label { display: block; margin-bottom: 0.25rem; font-size: 0.9rem;}
+        .color-input-group input[type="color"] { width: 100%; height: 35px; border-radius: 4px; border: 1px solid var(--theme-window-border); cursor: pointer;}
+        .font-select-group label { display: block; margin-bottom: 0.25rem; font-size: 0.9rem;}
+        #personalize-main-font-selector {
+            width: 100%; padding: 0.5rem; border-radius: 4px;
+            background-color: rgba(0,0,0,0.2); color: var(--theme-text-general);
+            border: 1px solid var(--theme-window-border);
+        }
+
+        /* Dokas Assistant Prompt Window */
+        #dokas-assistant-prompt-window .window-content {
+            font-family: 'Consolas', 'Monaco', monospace;
+            white-space: pre;
+            line-height: 1.2;
+            text-align: center;
+            padding: 2rem;
+        }
+        .dokas-ascii {
+            color: var(--theme-accent);
+            font-weight: bold;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+         /* My Journey Window */
+        .timeline-item {
+            padding-bottom: 1rem;
+            border-left: 2px solid var(--theme-accent);
+            position: relative;
+            padding-left: 1.5rem;
+            margin-left: 0.5rem;
+        }
+        .timeline-item:last-child { border-left: none; padding-left: calc(1.5rem + 2px); }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 0;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--theme-accent);
+            border: 2px solid var(--theme-window-bg);
+        }
+        .timeline-date { font-weight: 600; color: var(--theme-text-on-primary); margin-bottom: 0.25rem; }
+        .timeline-description { font-size: 0.9rem; color: var(--theme-text-general); }
+
+        /* Hobbies Window */
+        .hobby-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--theme-window-border);
+        }
+        .hobby-item:last-child { border-bottom: none; }
+        .hobby-item i { font-size: 1.8rem; color: var(--theme-accent); width: 30px; text-align: center;}
+        .hobby-details h4 { font-weight: 600; color: var(--theme-text-on-primary); margin-bottom: 0.1rem;}
+        .hobby-details p { font-size: 0.85rem; color: var(--theme-text-general-muted); }
+
+        /* Amigos Window */
+        #amigos-window .window-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .friend-card {
+            background-color: var(--theme-card-bg);
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+        .friend-card h3 {
+            color: var(--theme-card-title);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .friend-card p {
+            color: var(--theme-card-text);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .friend-card .status {
+            font-size: 0.8rem;
+            font-style: italic;
+            color: var(--theme-text-general-muted);
+        }
+
+        /* StreamOS Window */
+        #streamos-window .window-content {
+            display: flex;
+            flex-direction: column;
+            padding: 0; /* Remover padding padrão para controle total */
+            background-color: #1b2838; /* Cor de fundo similar à Steam */
+            color: #c7d5e0; /* Cor de texto clara */
+        }
+        .streamos-header {
+            background-color: #171a21;
+            padding: 10px 15px;
+            border-bottom: 1px solid #2a3f5a;
+        }
+        .streamos-header h2 {
+            color: #66c0f4; /* Cor de destaque Steam */
+            font-size: 1.5rem;
+            margin: 0;
+        }
+        .streamos-main-content {
+            display: flex;
+            flex-grow: 1;
+        }
+        .streamos-sidebar {
+            width: 200px;
+            background-color: #202d3c;
+            padding: 15px;
+            border-right: 1px solid #2a3f5a;
+            overflow-y: auto;
+        }
+        .streamos-sidebar h3 {
+            color: #c7d5e0;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #2a3f5a;
+            padding-bottom: 5px;
+        }
+        .streamos-game-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .streamos-game-item {
+            padding: 8px 10px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+            color: #c7d5e0;
+        }
+        .streamos-game-item:hover, .streamos-game-item.active {
+            background-color: #2a3f5a;
+            color: #66c0f4;
+        }
+        .streamos-game-display {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #1b2838; /* Fundo principal */
+        }
+        .streamos-game-canvas {
+            border: 1px solid #2a3f5a;
+            background-color: #121212; /* Fundo escuro para os canvas */
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .streamos-game-info {
+            text-align: center;
+            color: #c7d5e0;
+        }
+        .streamos-game-info h3 {
+            color: #66c0f4;
+            margin-bottom: 10px;
+        }
+        .streamos-game-info p {
+             color: #a0b1c0;
+             margin-bottom: 15px;
+        }
+        .streamos-play-button {
+            background-color: #66c0f4; /* Botão de play com cor Steam */
+            color: #171a21;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .streamos-play-button:hover {
+            background-color: #7ed3f9;
+        }
+        .streamos-game-display .game-placeholder {
+            font-size: 1.5rem;
+            color: #4b5a6a;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between items-center">
+
+    <!-- Área de Trabalho Principal -->
+    <div id="desktop" class="flex-grow desktop-bg relative p-4 w-full">
+        <canvas id="matrix-canvas"></canvas>
+        <canvas id="particles-canvas"></canvas>
+        <div id="icon-dock">
+            <!-- Ícones são adicionados aqui via JS -->
+        </div>
+        <div id="audio-visualizer-container">
+            <canvas id="audio-visualizer"></canvas>
+        </div>
+    </div>
+
+    <!-- Container para o Player do YouTube (oculto) -->
+    <div id="youtube-player-container">
+        <div id="youtube-player"></div>
+    </div>
+
+    <!-- Estrutura das Janelas (Exemplos) -->
+    <!-- Janela Spotify -->
+    <div id="spotify-window" class="window rounded-lg shadow-lg">
+        <div class="window-header flex items-center justify-between rounded-t-lg">
+            <span class="text-sm font-semibold"><i class="fab fa-spotify mr-2"></i>Spotify Player Retrô</span>
+            <div class="flex space-x-1 window-controls">
+                <button class="window-header-button minimize-button"><i class="fas fa-minus"></i></button>
+                <button class="window-header-button maximize-button"><i class="far fa-square"></i></button>
+                <button class="window-header-button close-button close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2 class="text-xl font-bold mb-2">Minhas Playlists Favoritas</h2>
+            <p class="text-xs text-[var(--theme-text-general-muted)] mb-3">Tocando Agora: <span id="spotify-now-playing">Lofi Background (YouTube)</span></p>
+            <div id="spotify-playlists" class="grid grid-cols-1 gap-4"></div>
+            <hr class="border-[var(--theme-window-border)] my-4">
+            <h3 class="text-lg font-semibold mb-2">Playlist da Vida de Dokas:</h3>
+            <div id="life-playlist" class="text-sm"></div>
+        </div>
+    </div>
+
+    <!-- Janela Projetos -->
+    <div id="projects-window" class="window rounded-lg shadow-lg">
+        <div class="window-header flex items-center justify-between rounded-t-lg">
+            <span class="text-sm font-semibold"><i class="fas fa-folder-open mr-2"></i>Meus Projetos</span>
+            <div class="flex space-x-1 window-controls">
+                <button class="window-header-button minimize-button"><i class="fas fa-minus"></i></button>
+                <button class="window-header-button maximize-button"><i class="far fa-square"></i></button>
+                <button class="window-header-button close-button close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2 class="text-xl font-bold mb-4">Projetos Desenvolvidos</h2>
+            <div id="projects-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+        </div>
+    </div>
+
+    <!-- Janela Sobre Mim -->
+    <div id="about-window" class="window rounded-lg shadow-lg">
+        <div class="window-header flex items-center justify-between rounded-t-lg">
+            <span class="text-sm font-semibold"><i class="fas fa-user-circle mr-2"></i>Sobre Dokas</span>
+            <div class="flex space-x-1 window-controls">
+                <button class="window-header-button minimize-button"><i class="fas fa-minus"></i></button>
+                <button class="window-header-button maximize-button"><i class="far fa-square"></i></button>
+                <button class="window-header-button close-button close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="flex flex-col items-center mb-4">
+                <img id="about-photo" src="https://placehold.co/128x128/7c3aed/ffffff?text=Dokas" alt="Foto de Dokas" class="rounded-full w-32 h-32 object-cover border-4 border-purple-400 shadow-lg">
+            </div>
+            <h2 class="text-xl font-bold mb-2 text-center">Olá, eu sou Dokas!</h2>
+            <p id="about-description" class="mb-4 leading-relaxed text-center"></p>
+            <div class="info-box-themed p-4 rounded-lg">
+                <h3 class="text-lg font-semibold mb-2">Interesses & Habilidades</h3>
+                <p id="about-interests" class="mb-2"></p>
+                <p id="about-skills"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Janela Terminal -->
+    <div id="extras-window" class="window rounded-lg shadow-lg">
+        <div class="window-header flex items-center justify-between rounded-t-lg">
+            <span class="text-sm font-semibold"><i class="fas fa-terminal mr-2"></i>Terminal DokasOS</span>
+            <div class="flex space-x-1 window-controls">
+                <button class="window-header-button minimize-button"><i class="fas fa-minus"></i></button>
+                <button class="window-header-button maximize-button"><i class="far fa-square"></i></button>
+                <button class="window-header-button close-button close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="window-content p-0 flex flex-col h-full bg-black rounded-b-lg">
+            <div id="terminal-output" class="terminal-output flex-grow mb-2"></div>
+            <div class="flex items-center p-2">
+                <span class="text-green-400 font-bold">C:\Users\Dokas&gt;</span>
+                <input type="text" id="terminal-input" class="terminal-input flex-grow" autofocus>
+            </div>
+        </div>
+    </div>
+
+    <!-- Janela Personalizar -->
+    <div id="personalize-window" class="window rounded-lg shadow-lg">
+        <div class="window-header flex items-center justify-between rounded-t-lg">
+            <span class="text-sm font-semibold"><i class="fas fa-sliders-h mr-2"></i>Temas & Aparência</span>
+            <div class="flex space-x-1 window-controls">
+                <button class="window-header-button minimize-button"><i class="fas fa-minus"></i></button>
+                <button class="window-header-button maximize-button"><i class="far fa-square"></i></button>
+                <button class="window-header-button close-button close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="p-3 rounded-md bg-[var(--theme-card-bg)] shadow">
+                    <h3 class="text-lg font-semibold mb-3 text-[var(--theme-card-title)] border-b border-[var(--theme-window-border)] pb-2">Wallpapers</h3>
+                    <div class="flex space-x-3 items-center mb-2">
+                        <button id="personalize-prev-wallpaper-btn" class="bg-purple-700 text-white px-3 py-1.5 rounded-md text-sm hover:bg-purple-800"><i class="fas fa-arrow-left"></i></button>
+                        <p id="personalize-current-wallpaper-info" class="text-sm flex-grow text-center">Wallpaper 1 de N</p>
+                        <button id="personalize-next-wallpaper-btn" class="bg-purple-700 text-white px-3 py-1.5 rounded-md text-sm hover:bg-purple-800"><i class="fas fa-arrow-right"></i></button>
+                    </div>
+                </div>
+                <div class="p-3 rounded-md bg-[var(--theme-card-bg)] shadow">
+                    <h3 class="text-lg font-semibold mb-3 text-[var(--theme-card-title)] border-b border-[var(--theme-window-border)] pb-2">Cores do Tema</h3>
+                    <div class="grid grid-cols-1 gap-3 mb-3">
+                        <div class="color-input-group">
+                            <label for="personalize-primary-color-picker" class="block text-xs font-medium mb-1">Primária:</label>
+                            <input type="color" id="personalize-primary-color-picker" value="#581c87" class="w-full h-8 rounded">
+                        </div>
+                        <div class="color-input-group">
+                            <label for="personalize-secondary-color-picker" class="block text-xs font-medium mb-1">Secundária:</label>
+                            <input type="color" id="personalize-secondary-color-picker" value="#3b0764" class="w-full h-8 rounded">
+                        </div>
+                        <div class="color-input-group">
+                            <label for="personalize-accent-color-picker" class="block text-xs font-medium mb-1">Destaque:</label>
+                            <input type="color" id="personalize-accent-color-picker" value="#a855f7" class="w-full h-8 rounded">
+                        </div>
+                    </div>
+                    <button id="personalize-apply-custom-theme-btn" class="bg-purple-700 text-white px-3 py-1.5 rounded-md text-sm hover:bg-purple-800 w-full mb-1 text-xs">Aplicar Cores</button>
+                    <button id="personalize-restore-wallpaper-theme-btn" class="bg-gray-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-gray-700 w-full text-xs">Restaurar Tema do Wallpaper</button>
+                </div>
+                <div class="p-3 rounded-md bg-[var(--theme-card-bg)] shadow md:col-span-2">
+                    <h3 class="text-lg font-semibold mb-3 text-[var(--theme-card-title)] border-b border-[var(--theme-window-border)] pb-2">Aparência Geral</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="color-input-group">
+                            <label for="personalize-desktop-bg-color-picker">Cor de Fundo (sem wallpaper):</label>
+                            <input type="color" id="personalize-desktop-bg-color-picker" value="#121212" class="w-full h-8 rounded">
+                        </div>
+                        <div class="font-select-group">
+                            <label for="personalize-main-font-selector">Fonte Principal:</label>
+                            <select id="personalize-main-font-selector" class="w-full p-1.5 rounded bg-black bg-opacity-20 border border-[var(--theme-window-border)] text-xs">
+                                <option value="'Inter', sans-serif">Inter (Padrão)</option>
+                                <option value="'Roboto', sans-serif">Roboto</option>
+                                <option value="'Open Sans', sans-serif">Open Sans</option>
+                                <option value="'Lato', sans-serif">Lato</option>
+                                <option value="'Consolas', 'Monaco', monospace">Consolas (Mono)</option>
+                            </select>
+                        </div>
+                    </div>
+                     <button id="personalize-apply-appearance-btn" class="bg-purple-700 text-white px-4 py-2 rounded-md hover:bg-purple-800 w-full mt-4 text-sm">Aplicar Aparência Geral</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Janela Bloco de Notas & Tarefas -->
+    <div id="notepad-window" class="window rounded-lg shadow-lg">
+        <div class="window-header flex items-center justify-between rounded-t-lg">
+            <span class="text-sm font-semibold"><i class="fas fa-book-open mr-2"></i>Notas & Tarefas</span>
+            <div class="flex space-x-1 window-controls">
+                <button class="window-header-button minimize-button"><i class="fas fa-minus"></i></button>
+                <button class="window-header-button maximize-button"><i class="far fa-square"></i></button>
+                <button class="window-header-button close-button close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="window-content flex flex-col h-full p-0">
+            <div class="notepad-tabs flex border-b border-[var(--theme-window-border)]">
+                <button data-tab="notepad" class="notepad-tab active px-4 py-2">Bloco de Notas</button>
+                <button data-tab="todolist" class="notepad-tab px-4 py-2">Lista de Tarefas</button>
+            </div>
+            <div id="notepad-content" class="notepad-content-area active p-3">
+                <textarea id="notepad-textarea" class="flex-grow w-full p-2 rounded bg-black bg-opacity-20 text-[var(--theme-text-general)] border border-[var(--theme-window-border)] resize-none outline-none focus:border-[var(--theme-accent)]" placeholder="Suas anotações..."></textarea>
+                <div class="mt-2 flex gap-2">
+                    <button id="save-note-btn" class="bg-purple-700 text-white px-3 py-1.5 rounded-md text-sm hover:bg-purple-800 flex-1">Salvar Nota</button>
+                    <button id="clear-note-btn" class="bg-gray-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-gray-700 flex-1">Limpar Nota</button>
+                </div>
+            </div>
+            <div id="todolist-content" class="notepad-content-area p-3">
+                 <div class="flex mb-3">
+                    <input type="text" id="todo-input" placeholder="Nova tarefa..." class="flex-grow mr-2 bg-black bg-opacity-20 text-[var(--theme-text-general)] border border-[var(--theme-window-border)] p-2 rounded outline-none focus:border-[var(--theme-accent)]">
+                    <button id="add-todo-btn" class="bg-purple-700 text-white px-3 py-1.5 rounded-md text-sm hover:bg-purple-800">Adicionar</button>
+                </div>
+                <ul id="todo-list" class="max-h-60 overflow-y-auto"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Janela Sobre DokasOS -->
+    <div id="about-os-window" class="window rounded-lg shadow-lg">
+        <div class="window-header flex items-center justify-between rounded-t-lg">
+            <span class="text-sm font-semibold"><i class="fab fa-linux mr-2"></i>Sobre DokasOS</span>
+            <div class="flex space-x-1 window-controls">
+                <button class="window-header-button minimize-button"><i class="fas fa-minus"></i></button>
+                <button class="window-header-button maximize-button"><i class="far fa-square"></i></button>
+                <button class="window-header-button close-button close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2 class="text-2xl font-bold mb-2 text-center">DokasOS Mysterium</h2>
+            <p class="text-center text-sm mb-1">Versão: <span id="os-version">1.7 "Nebulosa Gamer"</span></p>
+            <p class="text-center text-sm mb-3">Data da Compilação: <span id="os-build-date"></span></p>
+            <hr class="border-[var(--theme-window-border)] my-3">
+            <h3 class="text-lg font-semibold mb-2">Histórico de Versões (Changelog):</h3>
+            <ul id="changelog-list" class="list-disc list-inside text-sm ml-4 mb-3 max-h-40 overflow-y-auto"></ul>
+            <hr class="border-[var(--theme-window-border)] my-3">
+            <p class="text-sm mb-1"><strong>Desenvolvido com:</strong></p>
+            <ul class="list-disc list-inside text-sm ml-4 mb-3">
+                <li>Café (muito)</li>
+                <li>Sonhos (alguns pesadelos cósmicos e pixelados)</li>
+                <li>Linhas de Código (interestelares e de joystick)</li>
+                <li>Uma pitada de poeira estelar e bom humor</li>
+            </ul>
+            <p class="text-sm"><strong>Agradecimentos:</strong> A você, por explorar este universo!</p>
+        </div>
+    </div>
+
+    <!-- Janela StreamOS -->
+    <div id="streamos-window" class="window rounded-lg shadow-lg" style="width: 700px !important; height: 550px !important;">
+        <div class="window-header flex items-center justify-between rounded-t-lg">
+            <span class="text-sm font-semibold"><i class="fab fa-steam-symbol mr-2"></i>StreamOS Game Hub</span>
+            <div class="flex space-x-1 window-controls">
+                <button class="window-header-button minimize-button"><i class="fas fa-minus"></i></button>
+                <button class="window-header-button maximize-button"><i class="far fa-square"></i></button>
+                <button class="window-header-button close-button close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="streamos-header"><h2>Minha Biblioteca</h2></div>
+            <div class="streamos-main-content">
+                <aside class="streamos-sidebar">
+                    <h3>Jogos</h3>
+                    <ul class="streamos-game-list"></ul>
+                </aside>
+                <main id="streamos-game-display-area" class="streamos-game-display">
+                    <div class="game-placeholder">Selecione um jogo para começar!</div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Janela Dokas Assistente -->
+    <div id="dokas-assistant-prompt-window" class="window rounded-lg shadow-lg" style="width: 400px !important; height: 250px !important; resize: none !important;">
+        <div class="window-header flex items-center justify-between rounded-t-lg">
+            <span class="text-sm font-semibold"><i class="fas fa-robot mr-2"></i>Dokas Assistente</span>
+            <div class="flex space-x-1 window-controls">
+                 <!-- <button class="window-header-button minimize-button"><i class="fas fa-minus"></i></button> -->
+                 <!-- <button class="window-header-button maximize-button"><i class="far fa-square"></i></button> -->
+                <button class="window-header-button close-button close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="window-content flex flex-col items-center justify-center text-center">
+            <div class="dokas-ascii text-3xl">#^_^#</div>
+            <p class="text-md mt-2">Bem-vindo ao DokasOS!</p>
+            <p class="text-sm mt-2">Estou aqui para ajudar... ou pelo menos tentar!</p>
+            <p class="text-xs mt-3 text-[var(--theme-text-general-muted)]">Se algo quebrar, lembre-se: é uma feature, não um bug! (Ou quase)</p>
+        </div>
+    </div>
+
+    <!-- Janela Minha Jornada -->
+    <div id="my-journey-window" class="window rounded-lg shadow-lg">
+        <div class="window-header flex items-center justify-between rounded-t-lg">
+            <span class="text-sm font-semibold"><i class="fas fa-route mr-2"></i>Minha Jornada</span>
+            <div class="flex space-x-1 window-controls">
+                <button class="window-header-button minimize-button"><i class="fas fa-minus"></i></button>
+                <button class="window-header-button maximize-button"><i class="far fa-square"></i></button>
+                <button class="window-header-button close-button close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2 class="text-xl font-bold mb-4">Linha do Tempo</h2>
+            <div id="timeline-container"></div>
+        </div>
+    </div>
+
+    <!-- Janela Hobbies -->
+    <div id="hobbies-window" class="window rounded-lg shadow-lg">
+        <div class="window-header flex items-center justify-between rounded-t-lg">
+            <span class="text-sm font-semibold"><i class="fas fa-puzzle-piece mr-2"></i>Hobbies & Paixões</span>
+            <div class="flex space-x-1 window-controls">
+                <button class="window-header-button minimize-button"><i class="fas fa-minus"></i></button>
+                <button class="window-header-button maximize-button"><i class="far fa-square"></i></button>
+                <button class="window-header-button close-button close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2 class="text-xl font-bold mb-4">O Que Me Move</h2>
+            <div id="hobbies-container"></div>
+        </div>
+    </div>
+
+    <!-- Janela Amigos -->
+    <div id="amigos-window" class="window rounded-lg shadow-lg">
+        <div class="window-header flex items-center justify-between rounded-t-lg">
+            <span class="text-sm font-semibold"><i class="fas fa-users mr-2"></i>Amigos do Dokas</span>
+            <div class="flex space-x-1 window-controls">
+                <button class="window-header-button minimize-button"><i class="fas fa-minus"></i></button>
+                <button class="window-header-button maximize-button"><i class="far fa-square"></i></button>
+                <button class="window-header-button close-button close"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div class="window-content">
+            <h2 class="text-xl font-bold mb-4">A Turma Reunida (ou quase)</h2>
+            <div id="amigos-list" class="space-y-4"></div>
+        </div>
+    </div>
+
+
+    <!-- Barra de Tarefas -->
+    <div id="taskbar">
+        <!-- Elementos do clima e ícones de apps abertos serão inseridos aqui -->
+        <div id="taskbar-clock"></div>
+    </div>
+
+    <!-- Popup de Áudio -->
+    <div id="audio-popup">
+        <button id="play-pause-music-popup" class="taskbar-audio-control-button">
+            <i class="fas fa-play text-lg"></i>
+        </button>
+        <input type="range" min="0" max="100" value="15" id="volume-slider">
+    </div>
+
+    <script>
+    // ================================================================================= //
+    // DOKAS OS - SCRIPT PRINCIPAL OTIMIZADO                                            //
+    // ================================================================================= //
+    document.addEventListener('DOMContentLoaded', () => {
+        // ----------------------------------------------------------------------------- //
+        // MÓDULO DE CONFIGURAÇÃO (Dados e Constantes)                                   //
+        // ----------------------------------------------------------------------------- //
+        const Config = {
+            localStorageKeys: {
+                windowStates: 'dokasOsWindowStates_v3',
+                notepadText: 'dokasOsNotepadText_v2',
+                todos: 'dokasOsTodos_v2',
+                desktopBgColor: 'dokasOsDesktopBgColor_v2',
+                mainFont: 'dokasOsMainFont_v2',
+                currentWallpaperIndex: 'dokasOsCurrentWallpaper_v2',
+                volume: 'dokasOsVolume_v2',
+            },
+            ytPlayer: {
+                videoId: 'TSfypXLtC0E', // Lofi Girl para música de fundo
+                initialVolume: 15,
+            },
+            iconData: [
+                { id: 'extras-icon', windowId: 'extras-window', faClass: 'fas fa-terminal', text: 'Terminal' },
+                { id: 'my-journey-icon', windowId: 'my-journey-window', faClass: 'fas fa-route', text: 'Jornada'},
+                { id: 'about-icon', windowId: 'about-window', faClass: 'fas fa-user-circle', text: 'Sobre Mim' },
+                { id: 'projects-icon', windowId: 'projects-window', faClass: 'fas fa-folder-open', text: 'Projetos' },
+                { id: 'hobbies-icon', windowId: 'hobbies-window', faClass: 'fas fa-puzzle-piece', text: 'Hobbies'},
+                { id: 'amigos-icon', windowId: 'amigos-window', faClass: 'fas fa-users', text: 'Amigos'},
+                { id: 'spotify-icon', windowId: 'spotify-window', faClass: 'fab fa-spotify', text: 'Spotify' },
+                { id: 'streamos-icon', windowId: 'streamos-window', faClass: 'fab fa-steam-symbol', text: 'StreamOS' }
+            ],
+            focusWindowIds: ['projects-window', 'about-window', 'my-journey-window', 'hobbies-window', 'amigos-window', 'spotify-window'],
+            utilityWindowIds: ['extras-window', 'notepad-window', 'personalize-window', 'streamos-window', 'dokas-assistant-prompt-window', 'about-os-window'],
+            wallpapers: [
+                { url: 'https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwallpapercave.com%2Fwp%2Fwp11277017.jpg&f=1&nofb=1&ipt=5d132a36f5f6c0c1ebd8d57a921a613a5bd6bec41153f2c426b533817cb671f6&ipo=images', palette: { '--theme-primary': '#6d28d9', '--theme-secondary': '#4c1d95', '--theme-accent': '#a78bfa', '--theme-text-on-primary': '#ede9fe', '--theme-text-general': '#d1d5db', '--theme-text-general-muted': '#9ca3af', '--theme-window-bg': 'rgba(31, 25, 56, 0.85)', '--theme-window-border': 'rgba(109, 40, 217, 0.3)',  '--theme-window-header-bg-start': 'rgba(59, 29, 149, 0.7)', '--theme-window-header-bg-end': 'rgba(44, 22, 112, 0.8)', '--theme-taskbar-bg': 'rgba(23, 17, 43, 0.8)', '--theme-accent-shadow': 'rgba(167, 139, 250, 0.3)', '--theme-icon-dock-bg': 'rgba(44, 22, 112, 0.7)',  '--theme-desktop-icon-bg': 'rgba(76, 38, 189, 0.55)', '--theme-desktop-icon-bg-hover': 'rgba(109, 40, 217, 0.75)', '--theme-desktop-icon-color': '#ede9fe', '--theme-desktop-icon-border-hover': 'rgba(167, 139, 250, 0.4)' }},
+                { url: 'https://images.unsplash.com/photo-1570280404968-42140d1920a7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8Y3liZXJwdW5rJTIwY2l0eXxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80', palette: { '--theme-primary': '#047857', '--theme-secondary': '#065f46', '--theme-accent': '#34d399',    '--theme-text-on-primary': '#d1fae5', '--theme-text-general': '#a7f3d0', '--theme-text-general-muted': '#6ee7b7', '--theme-window-bg': 'rgba(13, 37, 30, 0.85)', '--theme-window-border': 'rgba(4, 120, 87, 0.4)', '--theme-window-header-bg-start': 'rgba(6, 95, 70, 0.7)', '--theme-window-header-bg-end': 'rgba(5, 79, 58, 0.8)', '--theme-taskbar-bg': 'rgba(8, 28, 23, 0.8)', '--theme-accent-shadow': 'rgba(52, 211, 153, 0.3)', '--theme-icon-dock-bg': 'rgba(5, 79, 58, 0.7)', '--theme-desktop-icon-bg': 'rgba(6, 95, 70, 0.55)', '--theme-desktop-icon-bg-hover': 'rgba(4, 120, 87, 0.75)', '--theme-desktop-icon-color': '#d1fae5', '--theme-desktop-icon-border-hover': 'rgba(52, 211, 153, 0.4)' }},
+                { url: 'https://images.unsplash.com/photo-1531315630201-bb15abeb1653?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YWJzdHJhY3QlMjBkYXJrJTIwYmx1ZXxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80', palette: { '--theme-primary': '#1e3a8a', '--theme-secondary': '#1c3170', '--theme-accent': '#60a5fa',    '--theme-text-on-primary': '#dbeafe', '--theme-text-general': '#bfdbfe', '--theme-text-general-muted': '#93c5fd', '--theme-window-bg': 'rgba(23, 37, 84, 0.85)', '--theme-window-border': 'rgba(30, 58, 138, 0.4)', '--theme-window-header-bg-start': 'rgba(30, 64, 175, 0.7)', '--theme-window-header-bg-end': 'rgba(28, 50, 138, 0.8)', '--theme-taskbar-bg': 'rgba(17, 28, 64, 0.8)', '--theme-accent-shadow': 'rgba(96, 165, 250, 0.3)', '--theme-icon-dock-bg': 'rgba(28, 50, 138, 0.7)', '--theme-desktop-icon-bg': 'rgba(30, 64, 175, 0.55)', '--theme-desktop-icon-bg-hover': 'rgba(29, 78, 216, 0.75)', '--theme-desktop-icon-color': '#dbeafe', '--theme-desktop-icon-border-hover': 'rgba(96, 165, 250, 0.4)' }},
+                { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8bW91bnRhaW4lMjBzdGFyc3xlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80', palette: { '--theme-primary': '#2c3e50', '--theme-secondary': '#1a252f', '--theme-accent': '#3498db',  '--theme-text-on-primary': '#ecf0f1', '--theme-text-general': '#bdc3c7', '--theme-text-general-muted': '#95a5a6', '--theme-window-bg': 'rgba(30, 40, 50, 0.88)', '--theme-window-border': 'rgba(52, 152, 219, 0.3)',  '--theme-window-header-bg-start': 'rgba(44, 62, 80, 0.75)', '--theme-window-header-bg-end': 'rgba(26, 37, 47, 0.85)', '--theme-taskbar-bg': 'rgba(20, 30, 40, 0.85)', '--theme-accent-shadow': 'rgba(52, 152, 219, 0.3)', '--theme-icon-dock-bg': 'rgba(26, 37, 47, 0.75)',  '--theme-desktop-icon-bg': 'rgba(44, 62, 80, 0.6)', '--theme-desktop-icon-bg-hover': 'rgba(52, 73, 94, 0.8)', '--theme-desktop-icon-color': '#ecf0f1', '--theme-desktop-icon-border-hover': 'rgba(52, 152, 219, 0.4)' }},
+                { url: 'https://images.unsplash.com/photo-1536566482680-fca31930a0bd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fGF1cm9yYXxlbnwwfHwwfHx8MA%3D%3D&w=1000&q=80', palette: { '--theme-primary': '#166534', '--theme-secondary': '#14532d', '--theme-accent': '#22c55e',  '--theme-text-on-primary': '#dcfce7', '--theme-text-general': '#bbf7d0', '--theme-text-general-muted': '#86efac', '--theme-window-bg': 'rgba(15, 30, 25, 0.88)', '--theme-window-border': 'rgba(34, 197, 94, 0.3)',  '--theme-window-header-bg-start': 'rgba(22, 101, 52, 0.75)', '--theme-window-header-bg-end': 'rgba(20, 83, 45, 0.85)', '--theme-taskbar-bg': 'rgba(10, 20, 15, 0.85)', '--theme-accent-shadow': 'rgba(34, 197, 94, 0.3)', '--theme-icon-dock-bg': 'rgba(20, 83, 45, 0.75)',  '--theme-desktop-icon-bg': 'rgba(22, 101, 52, 0.6)', '--theme-desktop-icon-bg-hover': 'rgba(21, 128, 61, 0.8)', '--theme-desktop-icon-color': '#dcfce7', '--theme-desktop-icon-border-hover': 'rgba(34, 197, 94, 0.4)' }}
+            ],
+            spotifyPlaylists: [
+                { name: "Chega de Derrotas 🎧", coverUrl: "https://i.pinimg.com/736x/01/85/0a/01850a3a912785833ccf73d07678cae6.jpg", spotifyUrl: "https://open.spotify.com/playlist/0hWOBR1EcHqx2tBkfFn4MS?si=cb789321d28546e7" },
+                { name: "Até a Validação 💻", coverUrl: "https://i.pinimg.com/736x/d4/be/45/d4be45b1ff5e8c4ab33ab95daa12addd.jpg", spotifyUrl: "https://open.spotify.com/playlist/1qysrUbhbrMhIPEEda15rd?si=d2d1b148548046ce" },
+                { name: "Work, Times Up 📻", coverUrl: "https://i.pinimg.com/736x/aa/8c/cb/aa8ccbfc49fef2699aeb979bf4bb2d7f.jpg", spotifyUrl: "https://open.spotify.com/playlist/3nIIIw2hFU9fvqTjZHf8Lg?si=855bce5846b24b8c" },
+            ],
+            lifePlaylistItems: [ { name: "Hip Hop Radio", artist: "Yun li, YE, Eminem", note: "F para as derrotas"} ],
+            projects: [ { name: "Site de reflexões", description: "Um site que serve de anotações, totalmente feito no localstorage e nada fica salvo em banco de dados ou em outra máquina. Feito em tematica retro terminal.", technologies: ["HTML", "CSS", "JavaScript"], repoLink: "https://holy-southern-bridge.glitch.me/", demoLink: "https://holy-southern-bridge.glitch.me/", imageUrl: "https://i.pinimg.com/736x/0e/2c/ad/0e2cad9b359cae21c8655b155f9351d6.jpg" } ],
+            aboutContent: { photoUrl: "https://i.pinimg.com/736x/fe/ca/df/fecadf4ed575f1ed39260f532619d77d.jpg", description: `Sou Dokas, um cara qualquer das interwebis que acredita na filosofia do seguinte pressuposto, "se tudo der errado, pelo menos posso fazer piadas disso". Acho legal transformar ideias complexas em soluções elegantes e funcionais. E é isso ai, tem uns 99 ester eggs nesse portifólio.`, interests: "Música, automação e descobrir novas ferramentas e tecnologias.", skills: "Python e em falar besteiras XD" },
+            terminalCommands: {}, // Será populado em AppModules.Terminal
+            changelogEntries: [
+                "v1.7 'Nebulosa Gamer': StreamOS implementado com Sokoban e Snake. Clima na taskbar. Foco principal aprimorado. Comandos de terminal para Temas e Notas.",
+                "v1.6 'Zenith': App Personalizar (Matrix) movido para comando de terminal. Clima agora na taskbar. Sistema de Foco Principal implementado.",
+                "v1.5 'Nova': Comandos 'dokasos' e 'assistente' voltaram a ser principais. Ícones removidos da dock.",
+                "v1.4 'Galaxy': Comandos 'dokasos' e 'assistente' movidos para 'personalizar'.",
+                "v1.3 'Cosmos': App Amigos, Clima Real (simulado), Comando de Luto, Melhorias no Terminal (DokasOS, Assistente, Personalizar). Ícone de Hobbies alterado.",
+                "v1.2 'Nebula': Dock centralizada no meio, Taskbar Win10, Matrix Rain v4 (Dokasu), Novas Apps (Galeria, Gerador Criativo, Player Nostálgico), Apps removidos (Aparência, Arquivos, Monitor de Sistema), Bloco de Notas com Tarefas, Clima SP/CA, Correções no Terminal e Jogo da Cobra.",
+                "v1.1 'Phoenix': Dock centralizada no topo, Taskbar Win10 (canto inf. dir.), Matrix Rain v3, Novos Apps (Explorador, Tarefas, Clima, Navegador, Sound Pad, Aparência), Jogo da Cobra (App), Sokoban (Terminal), Novas features de portfólio.",
+                "v1.0 RC: Dock central, Taskbar Win10 (canto inf. dir.), Matrix Rain v3 (comando + 'DOKASU'), Novas Apps (Explorador, Tarefas, Clima, Navegador, Sound Pad, Aparência), Jogo da Cobra (App), Sokoban (Terminal).",
+            ],
+            journeyEntries: [
+                { date: "2007", description: "Nasci inesperadamente. O mundo mal sabia o que o esperava." },
+                { date: "2015", description: "Primeiro contato com internet e o início das nerdices." },
+                { date: "Adolescência", description: "Sempre fazendo projetos de vídeos e qualquer coisa que me entretinha." },
+                { date: "Atualmente", description: "Criando muitos projetos de automação, jogando ideias pra fora e executando." },
+                { date: "Futuro...", description: "??? (Ainda escrevendo essa parte... com mais café!)" }
+            ],
+            hobbiesData: [
+                { icon: 'fa-music', name: 'Música', description: 'Gosto muito de Yun Li, Kanye West e Eminem, artistas favoritos.' },
+                { icon: 'fa-gamepad', name: 'Games', description: 'Jogo muito Dead by Daylight (DBD) e outros jogos por aí.' },
+                { icon: 'fa-code', name: 'Programação', description: 'Gosto muito de automação em Python e diversas outras criações.' },
+                { icon: 'fa-book-reader', name: 'Leitura', description: 'Curto alguns livros e já li alguns, como "O Mundo de Sofia" e outros por aí.' },
+                { icon: 'fa-brain', name: 'Aprender Coisas Novas', description: 'Gosto de aprender, cada queda o pai usa de mochila a jato para subir.' },
+                { icon: 'fa-comments', name: 'Conversas Aleatórias', description: 'Sou um rapaz aleatório demais, só que na minha. Sou difícil de comunicação, não manjo dos papos.'}
+            ],
+            amigosData: [
+                { nome: "Vx", descricao: "O pinóquio das verdades", status: "DBD" },
+                { nome: "Felipe", descricao: "Membro do traki games e ex ator da velma", status: "Breaking bad>>>>BCS" },
+                { nome: "Gustavo", descricao: "amigão do peito", status: "I Am Kanye west" },
+                { nome: "Falecido Gaviota", descricao: "Voou para além das nuvens, mas suas piadas e lembranças ecoam como um trovão divertido. Eterno em nossos corações.", status: "Em memória (Luto)" },
+                { nome: "Cleiton", descricao: "Um rapaz do peito cheio", status: "Bola pra toda obra" },
+                { nome: "Heitor", descricao: "koz, o desgraçado", status: "sem tempo" },
+                { nome: "Davi (Dave)", descricao: "Quem nasceu para ser Oh Shit, nunca será Very Good! - DaveKiller15", status: "sendo burro" },
+                { nome: "Arthur", descricao: "cara das opiniões secas", status: "vagabundo" },
+                { nome: "Mizuna Poggers", descricao: "tá tá bom :joinha:", status: "Desaparecida (Saudades!)" }
+            ],
+            streamOSGames: [ // Configuração dos jogos para o StreamOS
+                { id: 'sokoban', name: 'Sokoban Clássico', description: "Use W,A,S,D ou Setas. 'R' para reiniciar nível." },
+                { id: 'snake', name: 'Snake Retrô', description: "Use W,A,S,D ou Setas para mover." },
+                { id: 'newgame', name: 'Novo Jogo (Em Breve)', description: "Este jogo é tão incrível que ainda está em desenvolvimento ultra-secreto. 🤫" }
+            ],
+            // Constantes para jogos (podem ser movidas para seus respectivos módulos se ficarem muito grandes)
+            sokoban: {
+                PLAYER_CHAR: '@', BOX_CHAR: '□', BOX_ON_TARGET_CHAR: '■', TARGET_CHAR: '.', WALL_CHAR: '#', EMPTY_CHAR: ' ',
+                COLS: 10, ROWS: 8, GRID_SIZE: 25,
+                levels: [
+                    ["##########","#@  ##   #","# □ .##  #","#   . #  #","## □# # ##"," # .  □ # "," #    ### "," ######## "],
+                    ["  #####  ","###   #  ","#@□.  #  ","### □.#  ","#.# □.#  ","# . . #  ","#   #####","#####    "],
+                    ["####  ####","#@.#  #..#","# □####□ #","#  □  □  #","## .##. ##"," #  ##  # "," #      # "," ######## "]
+                ]
+            },
+            snake: {
+                GRID_SIZE: 20, TILE_COUNT: 15, INITIAL_SPEED: 150
+            }
+        };
+
+        // ----------------------------------------------------------------------------- //
+        // MÓDULO DE ESTADO DA APLICAÇÃO                                                 //
+        // ----------------------------------------------------------------------------- //
+        const AppState = {
+            ytPlayer: null,
+            youtubeAudioPlaying: false,
+            uiSoundsInitialized: false,
+            activeWindow: null,
+            zIndexCounter: 100,
+            openWindows: {}, // { windowId: { element: DOMElement, taskbarIcon: DOMElement, originalState: {} } }
+            windowStates: JSON.parse(localStorage.getItem(Config.localStorageKeys.windowStates)) || {},
+            currentWallpaperIndex: parseInt(localStorage.getItem(Config.localStorageKeys.currentWallpaperIndex)) || 0,
+            mouse: { x: null, y: null, radius: 75 },
+            particles: {
+                array: [],
+                numberOfParticles: 50,
+                animationId: null,
+            },
+            matrix: {
+                isActive: false,
+                animationId: null,
+                fontSize: 14,
+                columns: 0,
+                rainDrops: [],
+                katakana: "ドカスアァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン"
+            },
+            audioVisualizer: {
+                animationId: null,
+                numBars: 10,
+            },
+            // Estado específico dos jogos StreamOS
+            streamOS: {
+                currentGameId: null, // 'sokoban', 'snake', etc.
+                sokoban: {
+                    canvas: null, ctx: null, levelData: null, player: {}, boxes: [], targets: [], moves: 0, currentLevelIndex: 0, isRunning: false
+                },
+                snake: {
+                    canvas: null, ctx: null, snakeSegments: [], food: {}, direction: {}, score: 0, gameLoopInterval: null, isRunning: false
+                }
+            }
+        };
+
+        // ----------------------------------------------------------------------------- //
+        // ELEMENTOS DOM PRINCIPAIS (Cache)                                              //
+        // ----------------------------------------------------------------------------- //
+        const DOM = {
+            rootStyle: document.documentElement.style,
+            desktop: document.getElementById('desktop'),
+            allWindows: document.querySelectorAll('.window'), // NodeList, não atualiza dinamicamente
+            taskbar: document.getElementById('taskbar'),
+            taskbarClock: document.getElementById('taskbar-clock'),
+            iconDock: document.getElementById('icon-dock'),
+            audioVisualizerCanvas: document.getElementById('audio-visualizer'),
+            particlesCanvas: document.getElementById('particles-canvas'),
+            matrixCanvas: document.getElementById('matrix-canvas'),
+            ytPlayerContainer: document.getElementById('youtube-player-container'), // Para o player do YouTube
+            audioPopup: document.getElementById('audio-popup'),
+            playPauseMusicPopupButton: document.getElementById('play-pause-music-popup'),
+            volumeSlider: document.getElementById('volume-slider'),
+            // Elementos de janelas específicas (adicionar conforme necessário para acesso rápido)
+            terminalOutput: document.getElementById('terminal-output'),
+            terminalInput: document.getElementById('terminal-input'),
+            // ... outros elementos frequentemente acessados
+        };
+        DOM.visualizerCtx = DOM.audioVisualizerCanvas ? DOM.audioVisualizerCanvas.getContext('2d') : null;
+        DOM.particlesCtx = DOM.particlesCanvas ? DOM.particlesCanvas.getContext('2d') : null;
+        DOM.matrixCtx = DOM.matrixCanvas ? DOM.matrixCanvas.getContext('2d') : null;
+
+
+        // ----------------------------------------------------------------------------- //
+        // MÓDULO DE UTILIDADES (Funções Auxiliares)                                    //
+        // ----------------------------------------------------------------------------- //
+        const Utils = {
+            saveToLocalStorage: (key, value) => {
+                localStorage.setItem(key, JSON.stringify(value));
+            },
+            getFromLocalStorage: (key, defaultValue = null) => {
+                const item = localStorage.getItem(key);
+                return item ? JSON.parse(item) : defaultValue;
+            },
+            // Função para efeito de digitação (usada no terminal)
+            typeTextEffect: (targetElement, text, speed, callback, isCommandPrompt = false) => {
+                let i = 0;
+                if (isCommandPrompt) {
+                    targetElement.innerHTML += `\nC:\\Users\\Dokas&gt;`; // Usar innerHTML para o prompt
+                }
+                function type() {
+                    if (i < text.length) {
+                        // Para o terminal, é melhor usar innerText para preservar quebras de linha e evitar renderização de HTML
+                        // Mas se o texto contiver HTML (como no neofetch), precisaremos de uma abordagem diferente ou sanitização
+                        targetElement.innerText += text.charAt(i);
+                        SoundManager.playTypingSound(i);
+                        i++;
+                        targetElement.scrollTop = targetElement.scrollHeight;
+                        setTimeout(type, speed);
+                    } else if (callback) {
+                        if (!isCommandPrompt && !AppState.streamOS.sokoban.isRunning && !AppState.streamOS.snake.isRunning) {
+                             targetElement.innerText += '\nC:\\Users\\Dokas>';
+                             targetElement.scrollTop = targetElement.scrollHeight;
+                        }
+                        callback();
+                    } else if (!isCommandPrompt && !AppState.streamOS.sokoban.isRunning && !AppState.streamOS.snake.isRunning) {
+                        targetElement.innerText += '\nC:\\Users\\Dokas>';
+                        targetElement.scrollTop = targetElement.scrollHeight;
+                    }
+                }
+                type();
+            },
+            // Função para renderizar HTML de forma segura (exemplo básico)
+            renderHTML: (element, htmlString) => {
+                // CUIDADO: Usar innerHTML diretamente pode ser um risco de XSS se htmlString não for confiável.
+                // Para este projeto, assumindo que o HTML é gerado internamente e é seguro.
+                // Em um cenário real, considere usar DOMParser ou bibliotecas de template.
+                element.innerHTML = htmlString;
+            },
+            getWeatherIconClass: (iconCode) => {
+                const iconMap = {
+                    '01d': 'fa-sun', '01n': 'fa-moon', '02d': 'fa-cloud-sun', '02n': 'fa-cloud-moon',
+                    '03d': 'fa-cloud', '03n': 'fa-cloud', '04d': 'fa-cloud-meatball', '04n': 'fa-cloud-meatball',
+                    '09d': 'fa-cloud-showers-heavy', '09n': 'fa-cloud-showers-heavy', '10d': 'fa-cloud-sun-rain', '10n': 'fa-cloud-moon-rain',
+                    '11d': 'fa-poo-storm', '11n': 'fa-poo-storm', '13d': 'fa-snowflake', '13n': 'fa-snowflake',
+                    '50d': 'fa-smog', '50n': 'fa-smog'
+                };
+                return iconMap[iconCode] || 'fa-question-circle';
+            }
+        };
+
+        // ----------------------------------------------------------------------------- //
+        // MÓDULO DE GERENCIAMENTO DE SOM (Tone.js)                                      //
+        // ----------------------------------------------------------------------------- //
+        const SoundManager = {
+            sounds: {},
+            isReady: false,
+
+            init: () => {
+                // Tenta inicializar o Tone.js. O usuário pode precisar interagir primeiro.
+                if (typeof Tone !== 'undefined' && Tone.context.state !== 'running') {
+                    Tone.start().then(() => {
+                        SoundManager.loadSounds();
+                        AppState.uiSoundsInitialized = true;
+                        SoundManager.isReady = true;
+                        console.log("Tone.js iniciado e sons carregados.");
+                    }).catch(e => console.error("Erro ao iniciar Tone.js:", e));
+                } else if (typeof Tone !== 'undefined') {
+                    SoundManager.loadSounds();
+                    AppState.uiSoundsInitialized = true;
+                    SoundManager.isReady = true;
+                }
+            },
+            loadSounds: () => {
+                SoundManager.sounds.click = new Tone.MembraneSynth({ pitchDecay: 0.02, octaves: 3, envelope: { attack: 0.001, decay: 0.1, sustain: 0 } }).toDestination();
+                SoundManager.sounds.click.volume.value = -18;
+
+                SoundManager.sounds.open = new Tone.PluckSynth({ attackNoise: 0.5, dampening: 4000, resonance: 0.8 }).toDestination();
+                SoundManager.sounds.open.volume.value = -15;
+
+                SoundManager.sounds.close = new Tone.MetalSynth({ frequency: 100, envelope: { attack: 0.001, decay: 0.1, release: 0.1 }, harmonicity: 3.1, modulationIndex: 16, resonance: 3000, octaves: 1.5 }).toDestination();
+                SoundManager.sounds.close.volume.value = -20;
+
+                SoundManager.sounds.typing = new Tone.NoiseSynth({ noise: { type: 'brown', playbackRate: 0.5 }, envelope: { attack: 0.005, decay: 0.05, sustain: 0 } }).toDestination();
+                SoundManager.sounds.typing.volume.value = -28;
+
+                SoundManager.sounds.commandSent = new Tone.Synth({ oscillator: { type: "triangle" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.01, release: 0.1 } }).toDestination();
+                SoundManager.sounds.commandSent.volume.value = -20;
+
+                SoundManager.sounds.error = new Tone.Synth({ oscillator: {type: "square"}, envelope: {attack: 0.01, decay: 0.2, sustain: 0, release: 0.1}}).toDestination();
+                SoundManager.sounds.error.volume.value = -15;
+
+                SoundManager.sounds.success = new Tone.Synth({ oscillator: {type: "pulse", width: 0.4}, envelope: {attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.2}}).toDestination();
+                SoundManager.sounds.success.volume.value = -15;
+            },
+            playSound: (soundName, note = "C4", duration = "8n", time = Tone.now()) => {
+                if (AppState.uiSoundsInitialized && SoundManager.sounds[soundName] && Tone.context.state === 'running') {
+                    try {
+                        if (SoundManager.sounds[soundName] instanceof Tone.MembraneSynth || SoundManager.sounds[soundName] instanceof Tone.PluckSynth || SoundManager.sounds[soundName] instanceof Tone.Synth) {
+                             SoundManager.sounds[soundName].triggerAttackRelease(note, duration, time);
+                        } else if (SoundManager.sounds[soundName] instanceof Tone.MetalSynth || SoundManager.sounds[soundName] instanceof Tone.NoiseSynth) {
+                            SoundManager.sounds[soundName].triggerAttack(time); // Para MetalSynth e NoiseSynth, apenas Attack
+                        }
+                    } catch (e) {
+                        // console.warn(`Erro ao tocar som ${soundName}:`, e);
+                    }
+                }
+            },
+            playTypingSound: (charIndex) => {
+                if (AppState.uiSoundsInitialized && SoundManager.sounds.typing && Tone.context.state === 'running' && !AppState.streamOS.sokoban.isRunning && !AppState.streamOS.snake.isRunning) {
+                    try {
+                        SoundManager.sounds.typing.triggerAttackRelease("C1", "64n", Tone.now() + charIndex * 0.005);
+                    } catch (e) {
+                        // console.warn("Erro no som de digitação:", e);
+                    }
+                }
+            },
+            // Funções específicas para cada som para facilitar o uso
+            playClick: () => SoundManager.playSound('click', "C5", "32n"),
+            playOpen: () => SoundManager.playSound('open', "C4", "8n"),
+            playClose: () => SoundManager.playSound('close'), // MetalSynth não precisa de nota/duração aqui
+            playCommandSent: () => SoundManager.playSound('commandSent', "E4", "32n"),
+            playError: () => SoundManager.playSound('error', "C3", "8n"),
+            playSuccess: (note = "G4", duration = "16n") => SoundManager.playSound('success', note, duration),
+        };
+
+        // ----------------------------------------------------------------------------- //
+        // MÓDULO DE GERENCIAMENTO DE JANELAS                                            //
+        // ----------------------------------------------------------------------------- //
+        const WindowManager = {
+            init: () => {
+                // Adiciona listeners aos botões de controle de todas as janelas existentes
+                DOM.allWindows.forEach(winEl => WindowManager.setupWindowControls(winEl));
+                // Adiciona listener para trazer a janela à frente ao clicar
+                document.body.addEventListener('mousedown', (e) => {
+                    const windowClicked = e.target.closest('.window');
+                    if (windowClicked) {
+                        WindowManager.bringToFront(windowClicked);
+                    }
+                });
+                 document.body.addEventListener('touchstart', (e) => {
+                    const windowClicked = e.target.closest('.window');
+                    if (windowClicked) {
+                        WindowManager.bringToFront(windowClicked);
+                    }
+                }, {passive: true});
+            },
+
+            setupWindowControls: (windowEl) => {
+                const header = windowEl.querySelector('.window-header');
+                const closeButton = windowEl.querySelector('.close-button');
+                const minimizeButton = windowEl.querySelector('.minimize-button');
+                const maximizeButton = windowEl.querySelector('.maximize-button');
+
+                if (header) WindowManager.makeWindowDraggable(windowEl, header);
+
+                const stopPropagationForButton = (e) => e.stopPropagation();
+
+                if (closeButton) {
+                    closeButton.addEventListener('click', (e) => { e.stopPropagation(); WindowManager.close(windowEl); });
+                    closeButton.addEventListener('mousedown', stopPropagationForButton);
+                    closeButton.addEventListener('touchstart', stopPropagationForButton);
+                }
+                if (minimizeButton) {
+                    minimizeButton.addEventListener('click', (e) => { e.stopPropagation(); WindowManager.minimize(windowEl); });
+                    minimizeButton.addEventListener('mousedown', stopPropagationForButton);
+                    minimizeButton.addEventListener('touchstart', stopPropagationForButton);
+                }
+                if (maximizeButton) {
+                    maximizeButton.addEventListener('click', (e) => { e.stopPropagation(); WindowManager.toggleMaximize(windowEl, maximizeButton); });
+                    maximizeButton.addEventListener('mousedown', stopPropagationForButton);
+                    maximizeButton.addEventListener('touchstart', stopPropagationForButton);
+                }
+            },
+
+            open: (windowEl) => {
+                if (!windowEl) return;
+                const windowId = windowEl.id;
+                const savedState = AppState.windowStates[windowId];
+
+                // Define posição e tamanho iniciais ou restaurados
+                if (window.innerWidth >= 768) { // Desktop
+                    if (savedState && windowEl.dataset.isMaximized !== 'true') {
+                        Object.assign(windowEl.style, savedState);
+                    } else {
+                        const initialPositions = { /* ... (copiar de Config.initialWindowPositions se necessário) ... */
+                            'spotify-window': { top: '150px', left: '50px', width: '380px', height: '480px' },
+                            'projects-window': { top: '150px', left: '150px', width: '580px', height: '520px' },
+                            'about-window': { top: '150px', left: '250px', width: '420px', height: '460px' },
+                            'extras-window': { top: '150px', left: '350px', width: '520px', height: '380px' },
+                            'personalize-window': { top: '150px', left: '100px', width: '500px', height: 'auto' },
+                            'notepad-window': { top: '160px', left: '200px', width: '400px', height: '450px' },
+                            'about-os-window': { top: '170px', left: '300px', width: '420px', height: 'auto' },
+                            'streamos-window': { top: '100px', left: '100px', width: '700px', height: '550px'},
+                            'dokas-assistant-prompt-window': { top: '50%', left: '50%', width: '400px', height: '250px', transform: 'translate(-50%, -50%)'},
+                            'my-journey-window': {top: '150px', left: '50px', width: '500px', height: '400px'},
+                            'hobbies-window': {top: '160px', left: '150px', width: '450px', height: '380px'},
+                            'amigos-window': {top: '140px', left: '200px', width: '480px', height: '500px'}
+                        };
+                        if (initialPositions[windowId]) {
+                            Object.assign(windowEl.style, initialPositions[windowId]);
+                            if (windowId === 'dokas-assistant-prompt-window') {
+                                windowEl.style.transform = initialPositions[windowId].transform;
+                            } else {
+                                windowEl.style.transform = 'scale(0.95) translateY(10px)'; // Para animação
+                            }
+                        } else { // Fallback genérico
+                            windowEl.style.top = `${Math.random() * 100 + 50}px`;
+                            windowEl.style.left = `${Math.random() * 200 + 50}px`;
+                            windowEl.style.width = '400px';
+                            windowEl.style.height = '300px';
+                        }
+                    }
+                    windowEl.style.resize = (windowId === 'dokas-assistant-prompt-window' || windowId === 'streamos-window') ? 'none' : 'both';
+                } else { // Mobile
+                    windowEl.style.width = 'calc(100vw - 32px)';
+                    windowEl.style.height = 'calc(70vh)';
+                    windowEl.style.top = '80px';
+                    windowEl.style.left = '16px';
+                    windowEl.style.resize = 'none';
+                }
+                windowEl.dataset.isMaximized = 'false';
+
+
+                windowEl.style.display = 'flex';
+                windowEl.offsetWidth; // Força reflow para animação
+                windowEl.style.opacity = '1';
+                windowEl.style.transform = 'scale(1) translateY(0px)';
+
+                WindowManager.bringToFront(windowEl);
+                SoundManager.playOpen();
+
+                if (!AppState.openWindows[windowId]) {
+                    DesktopManager.createTaskbarIcon(windowEl);
+                }
+                DesktopManager.updateTaskbarActiveState(windowId);
+            },
+
+            close: (windowEl) => {
+                if (!windowEl) return;
+                SoundManager.playClose();
+                WindowManager.saveState(windowEl);
+
+                // Lógica específica de fechamento de apps (ex: parar jogos)
+                if (windowEl.id === 'streamos-window') {
+                    StreamOSGames.stopCurrentGame();
+                }
+
+                windowEl.style.opacity = '0';
+                windowEl.style.transform = 'scale(0.95) translateY(10px)';
+
+                setTimeout(() => {
+                    windowEl.style.display = 'none';
+                    const windowId = windowEl.id;
+                    if (AppState.openWindows[windowId]) {
+                        if (AppState.openWindows[windowId].taskbarIcon) {
+                            AppState.openWindows[windowId].taskbarIcon.remove();
+                        }
+                        delete AppState.openWindows[windowId];
+                    }
+                    if (AppState.activeWindow && AppState.activeWindow.id === windowId) {
+                        AppState.activeWindow = null;
+                        DesktopManager.updateTaskbarActiveState(null);
+                        WindowManager.applyFocusStyles();
+                    }
+                }, 250);
+            },
+
+            minimize: (windowEl) => {
+                if (!windowEl) return;
+                SoundManager.playClose(); // Som similar ao de fechar
+                WindowManager.saveState(windowEl);
+                windowEl.style.opacity = '0';
+                windowEl.style.transform = 'scale(0.95) translateY(10px)';
+                setTimeout(() => {
+                    windowEl.style.display = 'none';
+                }, 250);
+
+                if (AppState.activeWindow && AppState.activeWindow.id === windowEl.id) {
+                    AppState.activeWindow.classList.remove('active-border');
+                    AppState.activeWindow = null;
+                }
+                DesktopManager.updateTaskbarActiveState(null);
+                WindowManager.applyFocusStyles();
+            },
+
+            toggleMaximize: (windowEl, buttonEl) => {
+                if (!windowEl) return;
+                const windowId = windowEl.id;
+                if (!AppState.openWindows[windowId]) AppState.openWindows[windowId] = {}; // Garante que existe
+                let currentOriginalState = AppState.openWindows[windowId].originalState || {};
+
+
+                if (windowEl.dataset.isMaximized === 'true') {
+                    // Restaurar
+                    if (currentOriginalState.width) { // Verifica se há estado salvo
+                        Object.assign(windowEl.style, currentOriginalState);
+                    } else { // Fallback se não houver estado (improvável, mas seguro)
+                        windowEl.style.width = '60vw';
+                        windowEl.style.height = '60vh';
+                        windowEl.style.top = '20vh';
+                        windowEl.style.left = '20vw';
+                    }
+                    windowEl.style.resize = window.innerWidth >= 768 && windowId !== 'dokas-assistant-prompt-window' && windowId !== 'streamos-window' ? 'both' : 'none';
+                    windowEl.dataset.isMaximized = 'false';
+                    if (buttonEl) buttonEl.innerHTML = '<i class="far fa-square"></i>';
+                    delete AppState.openWindows[windowId].originalState; // Limpa o estado salvo após restaurar
+                } else {
+                    // Maximizar
+                    AppState.openWindows[windowId].originalState = {
+                        width: windowEl.style.width, height: windowEl.style.height,
+                        top: windowEl.style.top, left: windowEl.style.left
+                    };
+                    windowEl.style.width = 'calc(100vw - 32px)';
+                    windowEl.style.height = 'calc(100vh - 32px)'; // Ajuste para não cobrir taskbar/dock completamente
+                    windowEl.style.top = '16px';
+                    windowEl.style.left = '16px';
+                    windowEl.style.resize = 'none';
+                    windowEl.dataset.isMaximized = 'true';
+                    if (buttonEl) buttonEl.innerHTML = '<i class="far fa-clone"></i>'; // Ícone de restaurar
+                }
+                WindowManager.bringToFront(windowEl);
+            },
+
+            bringToFront: (windowEl) => {
+                if (!windowEl || (AppState.activeWindow && AppState.activeWindow.id === windowEl.id && windowEl.style.zIndex == AppState.zIndexCounter)) return;
+
+                AppState.zIndexCounter++;
+                windowEl.style.zIndex = AppState.zIndexCounter;
+
+                // Remove a borda ativa de todas as janelas e o estado 'dimmed'
+                document.querySelectorAll('.window').forEach(win => {
+                    win.classList.remove('active-border');
+                    win.classList.remove('window-dimmed');
+                });
+
+                windowEl.classList.add('active-border');
+                AppState.activeWindow = windowEl;
+                DesktopManager.updateTaskbarActiveState(windowEl.id);
+                WindowManager.applyFocusStyles();
+            },
+
+            applyFocusStyles: () => {
+                const isActiveWindowFocusType = AppState.activeWindow && Config.focusWindowIds.includes(AppState.activeWindow.id);
+                document.querySelectorAll('.window').forEach(win => {
+                    if (win.style.display === 'none') return;
+
+                    if (isActiveWindowFocusType) {
+                        if (win !== AppState.activeWindow && !Config.utilityWindowIds.includes(win.id)) {
+                            win.classList.add('window-dimmed');
+                        } else {
+                            win.classList.remove('window-dimmed');
+                        }
+                    } else {
+                        win.classList.remove('window-dimmed'); // Remove o dim de todas se a ativa não for do tipo foco
+                    }
+                });
+            },
+
+            saveState: (windowEl) => {
+                if (!windowEl || !windowEl.id) return;
+                // Não salva o estado se a janela estiver maximizada, para restaurar para o estado original não maximizado
+                if (windowEl.dataset.isMaximized === 'true') {
+                    // Se tivermos um estado original salvo (de antes de maximizar), usamos ele
+                    const originalState = AppState.openWindows[windowEl.id]?.originalState;
+                    if (originalState) {
+                         AppState.windowStates[windowEl.id] = { ...originalState };
+                    }
+                    // Se não, não salvamos nada para que ela abra no default na próxima vez
+                } else {
+                     AppState.windowStates[windowEl.id] = {
+                        width: windowEl.style.width,
+                        height: windowEl.style.height,
+                        top: windowEl.style.top,
+                        left: windowEl.style.left,
+                    };
+                }
+                Utils.saveToLocalStorage(Config.localStorageKeys.windowStates, AppState.windowStates);
+            },
+
+            makeWindowDraggable: (windowEl, headerEl) => {
+                let isDragging = false;
+                let offsetX, offsetY;
+
+                const onMove = (clientX, clientY) => {
+                    if (!isDragging) return;
+                    windowEl.style.left = (clientX - offsetX) + 'px';
+                    windowEl.style.top = (clientY - offsetY) + 'px';
+                };
+
+                const onEndDrag = () => {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    headerEl.style.cursor = 'grab';
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                    document.removeEventListener('touchmove', onTouchMove);
+                    document.removeEventListener('touchend', onTouchEnd);
+                    if (windowEl.dataset.isMaximized !== 'true') {
+                        WindowManager.saveState(windowEl);
+                    }
+                };
+
+                const onMouseMove = (e) => onMove(e.clientX, e.clientY);
+                const onMouseUp = onEndDrag;
+                const onTouchMove = (e) => { if (e.touches.length === 1) onMove(e.touches[0].clientX, e.touches[0].clientY); if (e.cancelable) e.preventDefault(); };
+                const onTouchEnd = onEndDrag;
+
+                const onStartDrag = (clientX, clientY, event) => {
+                    if (event.target.closest('.window-header-button')) return; // Não arrastar pelos botões
+                    if (windowEl.dataset.isMaximized === 'true' && window.innerWidth >= 768) return; // Não arrastar maximizado no desktop
+
+                    isDragging = true;
+                    offsetX = clientX - windowEl.getBoundingClientRect().left;
+                    offsetY = clientY - windowEl.getBoundingClientRect().top;
+                    headerEl.style.cursor = 'grabbing';
+                    WindowManager.bringToFront(windowEl);
+
+                    if (event.type === 'mousedown') {
+                        document.addEventListener('mousemove', onMouseMove);
+                        document.addEventListener('mouseup', onMouseUp);
+                    } else { // touchstart
+                        document.addEventListener('touchmove', onTouchMove, { passive: false });
+                        document.addEventListener('touchend', onTouchEnd);
+                    }
+                };
+
+                headerEl.addEventListener('mousedown', (e) => onStartDrag(e.clientX, e.clientY, e));
+                headerEl.addEventListener('touchstart', (e) => {
+                    if (e.touches.length === 1) onStartDrag(e.touches[0].clientX, e.touches[0].clientY, e);
+                }, { passive: false }); // passive: false para permitir preventDefault no touchmove
+            },
+        };
+
+        // ----------------------------------------------------------------------------- //
+        // MÓDULO DE GERENCIAMENTO DO DESKTOP (Ícones, Taskbar, Efeitos)                 //
+        // ----------------------------------------------------------------------------- //
+        const DesktopManager = {
+            init: () => {
+                DesktopManager.populateIconDock();
+                DesktopManager.setupDesktopEffects();
+                DesktopManager.initClock();
+                DesktopManager.initWeather();
+                DesktopManager.initAudioPopup();
+
+                window.addEventListener('resize', DesktopManager.onResize);
+            },
+
+            populateIconDock: () => {
+                DOM.iconDock.innerHTML = ''; // Limpa a dock antes de popular
+                Config.iconData.forEach(data => {
+                    const iconEl = document.createElement('div');
+                    iconEl.id = data.id;
+                    iconEl.className = 'icon-item';
+                    iconEl.innerHTML = `<i class="${data.faClass}"></i><span>${data.text}</span>`;
+                    DOM.iconDock.appendChild(iconEl);
+
+                    iconEl.addEventListener('click', () => {
+                        SoundManager.playClick();
+                        const targetWindow = document.getElementById(data.windowId);
+                        if (targetWindow) {
+                            WindowManager.open(targetWindow);
+                        }
+                    });
+                });
+            },
+
+            createTaskbarIcon: (windowEl) => {
+                const windowId = windowEl.id;
+                const headerIconEl = windowEl.querySelector('.window-header i');
+                const iconClass = headerIconEl ? headerIconEl.className : 'fas fa-window-maximize'; // Fallback icon
+                const windowTitleEl = windowEl.querySelector('.window-header span');
+                const windowTitle = windowTitleEl ? windowTitleEl.innerText : 'Janela';
+
+                const taskbarIcon = document.createElement('div');
+                taskbarIcon.className = 'taskbar-icon';
+                taskbarIcon.innerHTML = `<i class="${iconClass} text-lg"></i>`;
+                taskbarIcon.title = windowTitle;
+                taskbarIcon.dataset.windowId = windowId;
+
+                taskbarIcon.addEventListener('click', () => {
+                    SoundManager.playClick();
+                    const win = document.getElementById(taskbarIcon.dataset.windowId);
+                    if (win) {
+                        if (win.style.display === 'none' || win.style.opacity === '0') {
+                            WindowManager.open(win);
+                        } else {
+                            WindowManager.bringToFront(win);
+                        }
+                    }
+                });
+                // Insere antes do primeiro controle de áudio ou do relógio
+                const firstAudioControl = DOM.taskbar.querySelector('.taskbar-audio-control-button') || DOM.taskbarClock;
+                DOM.taskbar.insertBefore(taskbarIcon, firstAudioControl);
+                AppState.openWindows[windowId] = { ...AppState.openWindows[windowId], element: windowEl, taskbarIcon: taskbarIcon };
+            },
+
+            updateTaskbarActiveState: (activeWindowId) => {
+                for (const id in AppState.openWindows) {
+                    const winData = AppState.openWindows[id];
+                    if (winData.taskbarIcon) {
+                        if (id === activeWindowId && winData.element && winData.element.style.display !== 'none') {
+                            winData.taskbarIcon.classList.add('active');
+                        } else {
+                            winData.taskbarIcon.classList.remove('active');
+                        }
+                    }
+                }
+            },
+
+            setupDesktopEffects: () => {
+                // Partículas
+                DOM.particlesCanvas.width = window.innerWidth;
+                DOM.particlesCanvas.height = window.innerHeight;
+                DesktopManager.Particles.init();
+                DesktopManager.Particles.animate();
+
+                // Matrix
+                DOM.matrixCanvas.width = window.innerWidth;
+                DOM.matrixCanvas.height = window.innerHeight;
+                AppState.matrix.columns = DOM.matrixCanvas.width / AppState.matrix.fontSize;
+                for (let x = 0; x < AppState.matrix.columns; x++) AppState.matrix.rainDrops[x] = 1;
+                // O efeito Matrix Rain será iniciado/parado por comando do terminal
+
+                // Audio Visualizer
+                DesktopManager.AudioVisualizer.stop(); // Inicia parado
+            },
+
+            Particles: {
+                init: () => {
+                    AppState.particles.array = [];
+                    const particleColor = DOM.rootStyle.getPropertyValue('--theme-accent').trim() || '#a855f7';
+                    for (let i = 0; i < AppState.particles.numberOfParticles; i++) {
+                        let size = Math.random() * 2.5 + 1;
+                        let x = Math.random() * (DOM.particlesCanvas.width - size * 2) + size;
+                        let y = Math.random() * (DOM.particlesCanvas.height - size * 2) + size;
+                        let weight = Math.random() * 1 + 0.5;
+                        AppState.particles.array.push(new DesktopManager.Particles.Particle(x, y, size, particleColor, weight));
+                    }
+                },
+                Particle: class { // Definindo a classe Particle dentro do escopo
+                    constructor(x, y, size, color, weight) {
+                        this.x = x; this.y = y; this.size = size; this.color = color; this.weight = weight;
+                        this.baseX = this.x; this.baseY = this.y;
+                    }
+                    draw() {
+                        DOM.particlesCtx.beginPath();
+                        DOM.particlesCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+                        DOM.particlesCtx.fillStyle = this.color;
+                        DOM.particlesCtx.fill();
+                    }
+                    update() {
+                        this.x += (Math.random() - 0.5) * (this.weight * 0.2);
+                        this.y += (Math.random() - 0.5) * (this.weight * 0.2);
+
+                        let dxMouse = AppState.mouse.x - this.x;
+                        let dyMouse = AppState.mouse.y - this.y;
+                        let distanceMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
+                        if (distanceMouse < AppState.mouse.radius) {
+                            let forceDirectionX = dxMouse / distanceMouse;
+                            let forceDirectionY = dyMouse / distanceMouse;
+                            let force = (AppState.mouse.radius - distanceMouse) / AppState.mouse.radius;
+                            this.x -= forceDirectionX * force * this.weight * 0.5;
+                            this.y -= forceDirectionY * force * this.weight * 0.5;
+                        } else {
+                            if (this.x !== this.baseX) this.x -= (this.x - this.baseX) / 20;
+                            if (this.y !== this.baseY) this.y -= (this.y - this.baseY) / 20;
+                        }
+                        // Manter dentro dos limites da tela
+                        if (this.x + this.size < 0) this.x = DOM.particlesCanvas.width + this.size;
+                        if (this.x - this.size > DOM.particlesCanvas.width) this.x = -this.size;
+                        if (this.y + this.size < 0) this.y = DOM.particlesCanvas.height + this.size;
+                        if (this.y - this.size > DOM.particlesCanvas.height) this.y = -this.size;
+                        this.draw();
+                    }
+                },
+                animate: () => {
+                    DOM.particlesCtx.clearRect(0, 0, DOM.particlesCanvas.width, DOM.particlesCanvas.height);
+                    const currentAccentColor = DOM.rootStyle.getPropertyValue('--theme-accent').trim() || '#a855f7';
+                    for (let i = 0; i < AppState.particles.array.length; i++) {
+                        AppState.particles.array[i].color = currentAccentColor; // Atualiza a cor caso o tema mude
+                        AppState.particles.array[i].update();
+                    }
+                    AppState.particles.animationId = requestAnimationFrame(DesktopManager.Particles.animate);
+                },
+                stop: () => {
+                    if (AppState.particles.animationId) cancelAnimationFrame(AppState.particles.animationId);
+                    AppState.particles.animationId = null;
+                },
+                resize: () => {
+                    DOM.particlesCanvas.width = window.innerWidth;
+                    DOM.particlesCanvas.height = window.innerHeight;
+                    DesktopManager.Particles.init(); // Reinicia as partículas para a nova dimensão
+                }
+            },
+
+            MatrixRain: {
+                start: () => {
+                    if (!AppState.matrix.isActive) {
+                        AppState.matrix.isActive = true;
+                        DesktopManager.MatrixRain.resize(); // Garante que está configurado para o tamanho atual
+                        if (!AppState.matrix.animationId) DesktopManager.MatrixRain.draw();
+                    }
+                },
+                stop: () => {
+                    if (AppState.matrix.isActive) {
+                        AppState.matrix.isActive = false;
+                        // A animação vai parar no próximo frame devido à verificação de AppState.matrix.isActive
+                        // Limpa o canvas explicitamente se necessário
+                        setTimeout(() => {
+                            if (!AppState.matrix.isActive && DOM.matrixCtx) { // Dupla verificação
+                                DOM.matrixCtx.clearRect(0, 0, DOM.matrixCanvas.width, DOM.matrixCanvas.height);
+                            }
+                        }, 100); // Pequeno delay para garantir que o último frame não persista
+                    }
+                },
+                draw: () => {
+                    if (!AppState.matrix.isActive) {
+                        if (AppState.matrix.animationId) cancelAnimationFrame(AppState.matrix.animationId);
+                        AppState.matrix.animationId = null;
+                        if (DOM.matrixCtx) DOM.matrixCtx.clearRect(0, 0, DOM.matrixCanvas.width, DOM.matrixCanvas.height);
+                        return;
+                    }
+                    DOM.matrixCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                    DOM.matrixCtx.fillRect(0, 0, DOM.matrixCanvas.width, DOM.matrixCanvas.height);
+                    const matrixColor = DOM.rootStyle.getPropertyValue('--theme-accent').trim() || '#0F0';
+                    DOM.matrixCtx.fillStyle = matrixColor;
+                    DOM.matrixCtx.font = AppState.matrix.fontSize + 'px monospace';
+
+                    for (let i = 0; i < AppState.matrix.rainDrops.length; i++) {
+                        let text = Math.random() > 0.7 ? AppState.matrix.katakana.charAt(Math.floor(Math.random() * 5)) : AppState.matrix.katakana.charAt(Math.floor(Math.random() * AppState.matrix.katakana.length));
+                        DOM.matrixCtx.fillText(text, i * AppState.matrix.fontSize, AppState.matrix.rainDrops[i] * AppState.matrix.fontSize);
+                        if (AppState.matrix.rainDrops[i] * AppState.matrix.fontSize > DOM.matrixCanvas.height && Math.random() > 0.975) {
+                            AppState.matrix.rainDrops[i] = 0;
+                        }
+                        AppState.matrix.rainDrops[i]++;
+                    }
+                    AppState.matrix.animationId = requestAnimationFrame(DesktopManager.MatrixRain.draw);
+                },
+                resize: () => {
+                    DOM.matrixCanvas.width = window.innerWidth;
+                    DOM.matrixCanvas.height = window.innerHeight;
+                    AppState.matrix.columns = DOM.matrixCanvas.width / AppState.matrix.fontSize;
+                    AppState.matrix.rainDrops = [];
+                    for (let x = 0; x < AppState.matrix.columns; x++) AppState.matrix.rainDrops[x] = 1 + Math.random() * DOM.matrixCanvas.height / AppState.matrix.fontSize;
+                }
+            },
+
+            AudioVisualizer: {
+                start: () => {
+                    if (!AppState.audioVisualizer.animationId && AppState.youtubeAudioPlaying && DOM.visualizerCtx) {
+                        DesktopManager.AudioVisualizer.draw();
+                    }
+                },
+                stop: () => {
+                    if (AppState.audioVisualizer.animationId) cancelAnimationFrame(AppState.audioVisualizer.animationId);
+                    AppState.audioVisualizer.animationId = null;
+                    if (!DOM.visualizerCtx) return;
+                    DOM.visualizerCtx.clearRect(0, 0, DOM.audioVisualizerCanvas.width, DOM.audioVisualizerCanvas.height);
+                    const accentColor = DOM.rootStyle.getPropertyValue('--theme-accent').trim() || '#a855f7';
+                    DOM.visualizerCtx.fillStyle = accentColor;
+                    for (let i = 0; i < AppState.audioVisualizer.numBars; i++) {
+                        const barHeight = DOM.audioVisualizerCanvas.height * 0.05;
+                        const barWidth = (DOM.audioVisualizerCanvas.width / AppState.audioVisualizer.numBars) * 0.6;
+                        const barSpacing = (DOM.audioVisualizerCanvas.width / AppState.audioVisualizer.numBars) * 0.4;
+                        const x = i * (barWidth + barSpacing) + barSpacing / 2;
+                        DOM.visualizerCtx.fillRect(x, DOM.audioVisualizerCanvas.height - barHeight, barWidth, barHeight);
+                    }
+                },
+                draw: () => {
+                    if (!DOM.visualizerCtx) return;
+                    const barWidth = (DOM.audioVisualizerCanvas.width / AppState.audioVisualizer.numBars) * 0.6;
+                    const barSpacing = (DOM.audioVisualizerCanvas.width / AppState.audioVisualizer.numBars) * 0.4;
+                    DOM.visualizerCtx.clearRect(0, 0, DOM.audioVisualizerCanvas.width, DOM.audioVisualizerCanvas.height);
+                    const accentColor = DOM.rootStyle.getPropertyValue('--theme-accent').trim() || '#a855f7';
+                    DOM.visualizerCtx.fillStyle = accentColor;
+
+                    for (let i = 0; i < AppState.audioVisualizer.numBars; i++) {
+                        let barHeight = AppState.youtubeAudioPlaying ?
+                            Math.random() * (DOM.audioVisualizerCanvas.height * 0.8) + (DOM.audioVisualizerCanvas.height * 0.1) :
+                            DOM.audioVisualizerCanvas.height * 0.05;
+                        const x = i * (barWidth + barSpacing) + barSpacing / 2;
+                        DOM.visualizerCtx.fillRect(x, DOM.audioVisualizerCanvas.height - barHeight, barWidth, barHeight);
+                    }
+                    if (AppState.youtubeAudioPlaying) {
+                        AppState.audioVisualizer.animationId = requestAnimationFrame(DesktopManager.AudioVisualizer.draw);
+                    } else {
+                         DesktopManager.AudioVisualizer.stop(); // Garante que para se o áudio parar
+                    }
+                },
+                resize: () => {
+                    if (DOM.audioVisualizerCanvas) {
+                         // Não precisa redimensionar o canvas em si, pois ele é fixo, mas redesenha se estiver parado
+                        if (!AppState.youtubeAudioPlaying) DesktopManager.AudioVisualizer.stop();
+                    }
+                }
+            },
+
+            initClock: () => {
+                const updateClock = () => {
+                    const now = new Date();
+                    const saoPauloTime = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'America/Sao_Paulo' });
+                    const canadaTime = now.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'America/Toronto' });
+                    if (DOM.taskbarClock) DOM.taskbarClock.innerHTML = `SP: ${saoPauloTime}<br>CA: ${canadaTime}`;
+                };
+                setInterval(updateClock, 1000);
+                updateClock();
+            },
+
+            initWeather: () => {
+                const createTaskbarWeatherElement = (cityIdPrefix, cityName) => {
+                    const weatherEl = document.createElement('div');
+                    weatherEl.id = `taskbar-weather-${cityIdPrefix}`;
+                    weatherEl.className = 'taskbar-weather-item';
+                    weatherEl.innerHTML = `
+                        <span>${cityName}:</span>
+                        <i id="taskbar-weather-icon-${cityIdPrefix}" class="fas fa-spinner fa-spin"></i>
+                        <span id="taskbar-weather-temp-${cityIdPrefix}">--°C</span>`;
+                    DOM.taskbar.insertBefore(weatherEl, DOM.taskbarClock);
+                };
+                createTaskbarWeatherElement('sp', 'SP');
+                createTaskbarWeatherElement('ca', 'CA');
+
+                const fetchAndUpdateWeather = (lat, lon, cityIdPrefix) => {
+                    const iconEl = document.getElementById(`taskbar-weather-icon-${cityIdPrefix}`);
+                    const tempEl = document.getElementById(`taskbar-weather-temp-${cityIdPrefix}`);
+                    if (!iconEl || !tempEl) return;
+
+                    // Simulação de dados da API, pois não podemos fazer chamadas reais sem chave
+                    let data;
+                    if (cityIdPrefix === 'sp') data = { name: "São Paulo", main: { temp: 23 + (Math.random()*4-2) }, weather: [{ icon: "02d", description: "Parcialmente Nublado" }] };
+                    else data = { name: "Toronto", main: { temp: 15 + (Math.random()*4-2) }, weather: [{ icon: "03d", description: "Nublado" }] };
+
+                    iconEl.className = `fas ${Utils.getWeatherIconClass(data.weather[0].icon)}`;
+                    tempEl.textContent = `${Math.round(data.main.temp)}°C`;
+                    iconEl.title = data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1);
+                };
+
+                fetchAndUpdateWeather(-23.5505, -46.6333, 'sp');
+                fetchAndUpdateWeather(43.6532, -79.3832, 'ca');
+                setInterval(() => {
+                    fetchAndUpdateWeather(-23.5505, -46.6333, 'sp');
+                    fetchAndUpdateWeather(43.6532, -79.3832, 'ca');
+                }, 15 * 60 * 1000); // Atualiza a cada 15 minutos
+            },
+
+            initAudioPopup: () => {
+                const audioPopupButton = document.createElement('div');
+                audioPopupButton.id = 'audio-popup-button';
+                audioPopupButton.className = 'taskbar-audio-control-button';
+                audioPopupButton.innerHTML = '<i class="fas fa-volume-up text-lg"></i>';
+                DOM.taskbar.insertBefore(audioPopupButton, DOM.taskbarClock); // Insere antes do relógio
+
+                audioPopupButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    SoundManager.init(); // Garante que o Tone.js está pronto ao interagir
+                    const isShown = DOM.audioPopup.classList.toggle('show');
+                    if (isShown) {
+                        const btnRect = audioPopupButton.getBoundingClientRect();
+                        DOM.audioPopup.style.right = `${window.innerWidth - btnRect.right}px`;
+                        DOM.audioPopup.style.bottom = `${window.innerHeight - btnRect.top + 10}px`;
+                        DOM.audioPopup.style.top = 'auto'; DOM.audioPopup.style.left = 'auto'; DOM.audioPopup.style.transform = 'none';
+                    }
+                });
+
+                DOM.playPauseMusicPopupButton.addEventListener('click', () => {
+                    if (!AppState.ytPlayer || typeof AppState.ytPlayer.playVideo !== 'function') return;
+                    if (AppState.youtubeAudioPlaying) AppState.ytPlayer.pauseVideo();
+                    else AppState.ytPlayer.playVideo();
+                });
+
+                DOM.volumeSlider.value = Utils.getFromLocalStorage(Config.localStorageKeys.volume, Config.ytPlayer.initialVolume);
+                DOM.volumeSlider.addEventListener('input', (e) => {
+                    const volumeValue = parseFloat(e.target.value);
+                    if (AppState.ytPlayer && typeof AppState.ytPlayer.setVolume === 'function') {
+                        AppState.ytPlayer.setVolume(volumeValue);
+                    }
+                    Utils.saveToLocalStorage(Config.localStorageKeys.volume, volumeValue);
+                    // Atualiza ícone do botão de volume principal
+                    if (volumeValue == 0) audioPopupButton.innerHTML = '<i class="fas fa-volume-mute text-lg"></i>';
+                    else if (volumeValue < 50) audioPopupButton.innerHTML = '<i class="fas fa-volume-down text-lg"></i>';
+                    else audioPopupButton.innerHTML = '<i class="fas fa-volume-up text-lg"></i>';
+                });
+                 // Dispara o evento input para definir o ícone inicial corretamente
+                DOM.volumeSlider.dispatchEvent(new Event('input'));
+
+
+                document.addEventListener('click', (e) => { // Fechar popup ao clicar fora
+                    if (DOM.audioPopup.classList.contains('show') && !DOM.audioPopup.contains(e.target) && e.target !== audioPopupButton && !audioPopupButton.contains(e.target)) {
+                        DOM.audioPopup.classList.remove('show');
+                    }
+                });
+            },
+
+            onResize: () => {
+                DesktopManager.Particles.resize();
+                DesktopManager.MatrixRain.resize();
+                DesktopManager.AudioVisualizer.resize();
+                // Reajustar janelas maximizadas se necessário, ou outras lógicas de layout
+                document.querySelectorAll('.window').forEach(win => {
+                    if (win.dataset.isMaximized === 'true') {
+                        // Força o re-dimensionamento da janela maximizada para se ajustar à nova tela
+                        win.style.width = 'calc(100vw - 32px)';
+                        win.style.height = 'calc(100vh - 32px)';
+                        win.style.top = '16px';
+                        win.style.left = '16px';
+                    } else if (window.innerWidth < 768) { // Se for para mobile e não estiver maximizada
+                        win.style.width = 'calc(100vw - 32px)';
+                        win.style.height = 'calc(70vh)';
+                        win.style.top = '80px';
+                        win.style.left = '16px';
+                        win.style.resize = 'none';
+                    } else if (window.innerWidth >= 768 && win.style.resize === 'none' && win.id !== 'dokas-assistant-prompt-window' && win.id !== 'streamos-window') {
+                        // Se voltou para desktop e estava sem resize (mobile), restaura o resize
+                        win.style.resize = 'both';
+                    }
+                });
+            },
+
+            // Listener para o mouse (usado por partículas)
+            setupMouseListener: () => {
+                window.addEventListener('mousemove', (event) => { AppState.mouse.x = event.clientX; AppState.mouse.y = event.clientY; });
+                window.addEventListener('mouseout', () => { AppState.mouse.x = null; AppState.mouse.y = null; });
+            }
+        };
+        DesktopManager.setupMouseListener(); // Configura o listener do mouse
+
+
+        // ----------------------------------------------------------------------------- //
+        // MÓDULO DE GERENCIAMENTO DE TEMAS E APARÊNCIA                                  //
+        // ----------------------------------------------------------------------------- //
+        const ThemeManager = {
+            init: () => {
+                ThemeManager.applyInitialTheme();
+                ThemeManager.setupPersonalizeWindowListeners();
+            },
+            applyInitialTheme: () => {
+                // Aplica wallpaper e tema salvos ou padrão
+                const savedWallpaperIndex = parseInt(Utils.getFromLocalStorage(Config.localStorageKeys.currentWallpaperIndex, 0));
+                AppState.currentWallpaperIndex = (savedWallpaperIndex >= 0 && savedWallpaperIndex < Config.wallpapers.length) ? savedWallpaperIndex : 0;
+                ThemeManager.applyWallpaper(AppState.currentWallpaperIndex);
+
+                // Aplica fonte e cor de fundo salvas (se não houver wallpaper)
+                const savedFont = Utils.getFromLocalStorage(Config.localStorageKeys.mainFont, "'Inter', sans-serif");
+                DOM.rootStyle.setProperty('--main-font-family', savedFont);
+                const personalizeMainFontSelector = document.getElementById('personalize-main-font-selector');
+                if (personalizeMainFontSelector) personalizeMainFontSelector.value = savedFont;
+
+
+                const savedBgColor = Utils.getFromLocalStorage(Config.localStorageKeys.desktopBgColor);
+                if (savedBgColor && !Config.wallpapers[AppState.currentWallpaperIndex].url) { // Aplica só se não houver URL de wallpaper
+                    DOM.desktop.style.backgroundImage = 'none';
+                    DOM.desktop.style.backgroundColor = savedBgColor;
+                }
+                 const personalizeDesktopBgColorPicker = document.getElementById('personalize-desktop-bg-color-picker');
+                 if(personalizeDesktopBgColorPicker) personalizeDesktopBgColorPicker.value = savedBgColor || '#121212';
+            },
+
+            applyWallpaper: (index) => {
+                if (index >= 0 && index < Config.wallpapers.length) {
+                    const selectedWallpaper = Config.wallpapers[index];
+                    if (selectedWallpaper.url) {
+                        DOM.desktop.style.backgroundImage = `url('${selectedWallpaper.url}')`;
+                         // Só aplica paleta se o wallpaper tiver uma definida
+                        if (selectedWallpaper.palette) {
+                            for (const key in selectedWallpaper.palette) {
+                                DOM.rootStyle.setProperty(key, selectedWallpaper.palette[key]);
+                            }
+                        }
+                    } else { // Caso não haja URL, usa a cor de fundo
+                        DOM.desktop.style.backgroundImage = 'none';
+                        const bgColor = Utils.getFromLocalStorage(Config.localStorageKeys.desktopBgColor, '#121212');
+                        DOM.desktop.style.backgroundColor = bgColor;
+                         // Se não há wallpaper, não sobrescreve a paleta customizada (se houver)
+                    }
+                    AppState.currentWallpaperIndex = index;
+                    Utils.saveToLocalStorage(Config.localStorageKeys.currentWallpaperIndex, index);
+
+                    const personalizeCurrentWallpaperInfo = document.getElementById('personalize-current-wallpaper-info');
+                    if (personalizeCurrentWallpaperInfo) {
+                        personalizeCurrentWallpaperInfo.innerText = `Wallpaper ${index + 1} de ${Config.wallpapers.length}`;
+                    }
+                    // Atualiza os color pickers na janela de personalização para refletir o tema do wallpaper
+                    ThemeManager.updateColorPickersToCurrentTheme();
+                    DesktopManager.Particles.init(); // Reinicia partículas para nova cor de acento
+                }
+            },
+            updateColorPickersToCurrentTheme: () => {
+                const primaryColorPicker = document.getElementById('personalize-primary-color-picker');
+                const secondaryColorPicker = document.getElementById('personalize-secondary-color-picker');
+                const accentColorPicker = document.getElementById('personalize-accent-color-picker');
+
+                if(primaryColorPicker) primaryColorPicker.value = DOM.rootStyle.getPropertyValue('--theme-primary').trim();
+                if(secondaryColorPicker) secondaryColorPicker.value = DOM.rootStyle.getPropertyValue('--theme-secondary').trim();
+                if(accentColorPicker) accentColorPicker.value = DOM.rootStyle.getPropertyValue('--theme-accent').trim();
+            },
+
+            setupPersonalizeWindowListeners: () => {
+                const personalizeWindow = document.getElementById('personalize-window');
+                if (!personalizeWindow) return;
+
+                const prevWallpaperBtn = document.getElementById('personalize-prev-wallpaper-btn');
+                const nextWallpaperBtn = document.getElementById('personalize-next-wallpaper-btn');
+                const primaryColorPicker = document.getElementById('personalize-primary-color-picker');
+                const secondaryColorPicker = document.getElementById('personalize-secondary-color-picker');
+                const accentColorPicker = document.getElementById('personalize-accent-color-picker');
+                const applyCustomThemeBtn = document.getElementById('personalize-apply-custom-theme-btn');
+                const restoreWallpaperThemeBtn = document.getElementById('personalize-restore-wallpaper-theme-btn');
+                const desktopBgColorPicker = document.getElementById('personalize-desktop-bg-color-picker');
+                const mainFontSelector = document.getElementById('personalize-main-font-selector');
+                const applyAppearanceBtn = document.getElementById('personalize-apply-appearance-btn');
+
+                if (prevWallpaperBtn) prevWallpaperBtn.addEventListener('click', () => {
+                    let newIndex = (AppState.currentWallpaperIndex - 1 + Config.wallpapers.length) % Config.wallpapers.length;
+                    ThemeManager.applyWallpaper(newIndex);
+                    SoundManager.playClick();
+                });
+                if (nextWallpaperBtn) nextWallpaperBtn.addEventListener('click', () => {
+                    let newIndex = (AppState.currentWallpaperIndex + 1) % Config.wallpapers.length;
+                    ThemeManager.applyWallpaper(newIndex);
+                    SoundManager.playClick();
+                });
+
+                if (applyCustomThemeBtn) applyCustomThemeBtn.addEventListener('click', () => {
+                    DOM.rootStyle.setProperty('--theme-primary', primaryColorPicker.value);
+                    DOM.rootStyle.setProperty('--theme-secondary', secondaryColorPicker.value);
+                    DOM.rootStyle.setProperty('--theme-accent', accentColorPicker.value);
+                    DOM.rootStyle.setProperty('--theme-button-bg', primaryColorPicker.value); // Exemplo de como aplicar
+                    DOM.rootStyle.setProperty('--theme-button-hover-bg', secondaryColorPicker.value);
+                    DOM.rootStyle.setProperty('--theme-accent-shadow', `${accentColorPicker.value}4D`); // Sombra com alfa
+                    DesktopManager.Particles.init(); // Recria partículas com nova cor de acento
+                    SoundManager.playSuccess("A4");
+                });
+
+                if (restoreWallpaperThemeBtn) restoreWallpaperThemeBtn.addEventListener('click', () => {
+                    ThemeManager.applyWallpaper(AppState.currentWallpaperIndex); // Reaplica o tema do wallpaper atual
+                    SoundManager.playSuccess("B4");
+                });
+
+                if (applyAppearanceBtn) applyAppearanceBtn.addEventListener('click', () => {
+                    const selectedBgColor = desktopBgColorPicker.value;
+                    const selectedFont = mainFontSelector.value;
+
+                    DOM.desktop.style.backgroundImage = 'none'; // Remove wallpaper ao aplicar cor de fundo
+                    DOM.desktop.style.backgroundColor = selectedBgColor;
+                    DOM.rootStyle.setProperty('--main-font-family', selectedFont);
+
+                    Utils.saveToLocalStorage(Config.localStorageKeys.desktopBgColor, selectedBgColor);
+                    Utils.saveToLocalStorage(Config.localStorageKeys.mainFont, selectedFont);
+                    // Define o wallpaper atual como "nenhum" para que a cor de fundo persista
+                    Utils.saveToLocalStorage(Config.localStorageKeys.currentWallpaperIndex, -1); // -1 pode indicar "sem wallpaper"
+                    AppState.currentWallpaperIndex = -1; // Atualiza estado interno
+                     const personalizeCurrentWallpaperInfo = document.getElementById('personalize-current-wallpaper-info');
+                    if (personalizeCurrentWallpaperInfo) personalizeCurrentWallpaperInfo.innerText = "Cor de Fundo Ativa";
+
+
+                    SoundManager.playSuccess("C5");
+                });
+                ThemeManager.updateColorPickersToCurrentTheme(); // Garante que os pickers iniciam com os valores corretos
+            }
+        };
+
+
+        // ----------------------------------------------------------------------------- //
+        // MÓDULO DE PLAYER DE YOUTUBE (Música de Fundo)                                 //
+        // ----------------------------------------------------------------------------- //
+        const YouTubePlayerManager = {
+            init: () => {
+                if (window.YT && window.YT.Player) { // Se a API já carregou
+                    YouTubePlayerManager.onYouTubeIframeAPIReady();
+                } else { // Aguarda a API carregar
+                    window.onYouTubeIframeAPIReady = YouTubePlayerManager.onYouTubeIframeAPIReady;
+                }
+            },
+            onYouTubeIframeAPIReady: () => {
+                AppState.ytPlayer = new YT.Player('youtube-player', {
+                    height: '0', width: '0', videoId: Config.ytPlayer.videoId,
+                    playerVars: { 'autoplay': 1, 'controls': 0, 'loop': 1, 'playlist': Config.ytPlayer.videoId },
+                    events: { 'onReady': YouTubePlayerManager.onPlayerReady, 'onStateChange': YouTubePlayerManager.onPlayerStateChange }
+                });
+            },
+            onPlayerReady: (event) => {
+                const savedVolume = Utils.getFromLocalStorage(Config.localStorageKeys.volume, Config.ytPlayer.initialVolume);
+                if (AppState.ytPlayer && typeof AppState.ytPlayer.setVolume === 'function') {
+                    AppState.ytPlayer.setVolume(parseFloat(savedVolume));
+                }
+                if (DOM.volumeSlider) DOM.volumeSlider.value = savedVolume; // Sincroniza o slider
+
+                // Tenta dar play. Pode ser bloqueado pelo navegador.
+                if (AppState.ytPlayer && typeof AppState.ytPlayer.playVideo === 'function') {
+                    try {
+                        event.target.playVideo();
+                    } catch (e) {
+                        console.warn("Autoplay do YouTube bloqueado:", e);
+                        // Atualiza UI para indicar que está pausado se o autoplay falhar
+                        AppState.youtubeAudioPlaying = false;
+                        if(DOM.playPauseMusicPopupButton) DOM.playPauseMusicPopupButton.innerHTML = '<i class="fas fa-play text-lg"></i>';
+                        DesktopManager.AudioVisualizer.stop();
+                    }
+                }
+            },
+            onPlayerStateChange: (event) => {
+                if (event.data === YT.PlayerState.PLAYING) {
+                    AppState.youtubeAudioPlaying = true;
+                    if(DOM.playPauseMusicPopupButton) DOM.playPauseMusicPopupButton.innerHTML = '<i class="fas fa-pause text-lg"></i>';
+                    DesktopManager.AudioVisualizer.start();
+                } else {
+                    AppState.youtubeAudioPlaying = false;
+                    if(DOM.playPauseMusicPopupButton) DOM.playPauseMusicPopupButton.innerHTML = '<i class="fas fa-play text-lg"></i>';
+                    DesktopManager.AudioVisualizer.stop();
+                }
+            }
+        };
+        // Carrega a API do YouTube de forma assíncrona
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+
+        // ----------------------------------------------------------------------------- //
+        // MÓDULOS DE APLICATIVOS (Lógica Específica de Cada Janela)                     //
+        // ----------------------------------------------------------------------------- //
+        const AppModules = {
+            Spotify: {
+                init: () => {
+                    const playlistsContainer = document.getElementById('spotify-playlists');
+                    const lifePlaylistContainer = document.getElementById('life-playlist');
+                    if (playlistsContainer) {
+                        Config.spotifyPlaylists.forEach(playlist => {
+                            const itemDiv = document.createElement('div');
+                            itemDiv.className = 'spotify-playlist-item flex items-center p-3 shadow-sm cursor-pointer';
+                            Utils.renderHTML(itemDiv, `
+                                <img src="${playlist.coverUrl}" alt="${playlist.name}" class="w-16 h-16 rounded-md mr-4 object-cover flex-shrink-0" onerror="this.src='https://placehold.co/64x64/1DB954/ffffff?text=Erro'; this.onerror=null;">
+                                <div class="flex-grow overflow-hidden">
+                                    <h3 class="font-semibold truncate">${playlist.name}</h3>
+                                    <a href="${playlist.spotifyUrl}" target="_blank" class="text-sm flex items-center">Abrir no Spotify <i class="fas fa-external-link-alt ml-1 text-xs"></i></a>
+                                </div>`);
+                            itemDiv.addEventListener('click', (e) => { if (e.target.tagName !== 'A' && !e.target.closest('A')) window.open(playlist.spotifyUrl, '_blank'); });
+                            playlistsContainer.appendChild(itemDiv);
+                        });
+                    }
+                    if (lifePlaylistContainer) {
+                        Config.lifePlaylistItems.forEach(item => {
+                            const itemDiv = document.createElement('div');
+                            itemDiv.className = 'mb-2 pb-2 border-b border-[var(--theme-window-border)] border-opacity-50';
+                            Utils.renderHTML(itemDiv, `<p class="font-semibold text-[var(--theme-text-on-primary)]">${item.name} - ${item.artist}</p><p class="text-xs text-[var(--theme-text-general-muted)] italic">"${item.note}"</p>`);
+                            lifePlaylistContainer.appendChild(itemDiv);
+                        });
+                    }
+                }
+            },
+            Projects: {
+                init: () => {
+                    const container = document.getElementById('projects-list');
+                    if (container) {
+                        Config.projects.forEach(project => {
+                            const card = document.createElement('div');
+                            card.className = 'project-card-themed p-4 rounded-lg shadow-sm hover:shadow-lg transition-all duration-200 flex flex-col';
+                            Utils.renderHTML(card, `
+                                <img src="${project.imageUrl}" alt="${project.name}" class="w-full h-40 object-cover rounded-md mb-3" onerror="this.src='https://placehold.co/300x160/7c3aed/ffffff?text=Projeto'; this.onerror=null;">
+                                <h3 class="font-bold text-lg mb-1">${project.name}</h3>
+                                <p class="text-sm mb-2 flex-grow">${project.description}</p>
+                                <p class="text-xs mb-3">Tecnologias: <span class="font-medium">${project.technologies.join(', ')}</span></p>
+                                <div class="flex gap-2 mt-auto">
+                                    <a href="${project.repoLink}" target="_blank" class="bg-purple-700 text-white px-3 py-1.5 rounded-md text-sm hover:bg-purple-800 transition-colors duration-200 flex items-center shadow hover:shadow-md"><i class="fab fa-github mr-1.5"></i> Repositório</a>
+                                    ${project.demoLink ? `<a href="${project.demoLink}" target="_blank" class="bg-gray-800 text-white px-3 py-1.5 rounded-md text-sm hover:bg-gray-900 transition-colors duration-200 flex items-center shadow hover:shadow-md"><i class="fas fa-play-circle mr-1.5"></i> Demo</a>` : ''}
+                                </div>`);
+                            container.appendChild(card);
+                        });
+                    }
+                }
+            },
+            AboutMe: {
+                init: () => {
+                    const photoEl = document.getElementById('about-photo');
+                    const descEl = document.getElementById('about-description');
+                    const interestsEl = document.getElementById('about-interests');
+                    const skillsEl = document.getElementById('about-skills');
+                    if (photoEl) photoEl.src = Config.aboutContent.photoUrl;
+                    if (descEl) descEl.innerText = Config.aboutContent.description.trim();
+                    if (interestsEl) interestsEl.innerText = `Interesses: ${Config.aboutContent.interests}`;
+                    if (skillsEl) skillsEl.innerText = `Habilidades: ${Config.aboutContent.skills}`;
+                }
+            },
+            Terminal: {
+                init: () => {
+                    if (DOM.terminalOutput) DOM.terminalOutput.innerText = 'Bem-vindo ao Terminal DokasOS!\nDigite \'help\' para ver os comandos disponíveis.\nC:\\Users\\Dokas>';
+                    if (DOM.terminalInput) {
+                        DOM.terminalInput.addEventListener('focus', () => SoundManager.init(), { once: true }); // Garante que Tone.js está pronto
+                        DOM.terminalInput.addEventListener('keydown', AppModules.Terminal.handleInput);
+                    }
+                    // Populando os comandos do terminal
+                    Config.terminalCommands = {
+                        'help': `Comandos disponíveis:\n- 'about': Saiba mais sobre Dokas.\n- 'projects': Veja os projetos de Dokas.\n- 'contact': Informações de contato.\n- 'clear': Limpa o terminal.\n- 'clearhistory': Limpa o histórico visível do terminal.\n- 'showimg <url>': Mostra uma imagem no terminal.\n- 'trakigames': Informações sobre o canal Traki Games.\n- 'dokasos': Abre informações sobre o DokasOS.\n- 'assistente': Abre o Dokas Assistente.\n- 'temas': Abre a janela de Temas & Aparência.\n- 'notas': Abre o Bloco de Notas & Tarefas.\n- 'personalizar matrix <on|off>': Controla o efeito Matrix Rain.\n- 'streamos': Abre o hub de jogos StreamOS.\n- 'date': Mostra data e hora atuais.\n- 'calc <expressão>': Calculadora (ex: calc 2+2*3).\n- 'fortune': Mensagem da sorte.\n- 'whoami': Quem sou eu?\n- 'pwd': Caminho atual (simulado).\n- 'neofetch': Informações do sistema (simulado).\n- 'easteregg': Tente a sorte!`,
+                        'about': `Prazer, eu sou dokas. Jogo Jogos :fire:`,
+                        'projects': `Visite a janela "Projetos" para ver meus trabalhos mais recentes!`,
+                        'contact': `Você pode me encontrar no DC: Dokquin`,
+                        'trakigames': `Traki Games: Onde a zoeira encontra o gameplay!\nLink: https://www.youtube.com/@TrakiGames (Link placeholder)`,
+                        'easteregg': `esse easteregg é ser um esteregg, wowwwww.`,
+                        'clear': () => {
+                            if (DOM.terminalOutput) DOM.terminalOutput.innerText = 'Bem-vindo ao Terminal DokasOS!\nDigite \'help\' para ver os comandos disponíveis.\nC:\\Users\\Dokas>';
+                        },
+                        'clearhistory': () => { if (DOM.terminalOutput) DOM.terminalOutput.innerText = 'Bem-vindo ao Terminal DokasOS!\nDigite \'help\' para ver os comandos disponíveis.\nC:\\Users\\Dokas>'; },
+                        'dokasos': () => WindowManager.open(document.getElementById('about-os-window')),
+                        'assistente': () => WindowManager.open(document.getElementById('dokas-assistant-prompt-window')),
+                        'temas': () => WindowManager.open(document.getElementById('personalize-window')),
+                        'notas': () => WindowManager.open(document.getElementById('notepad-window')),
+                        'streamos': () => WindowManager.open(document.getElementById('streamos-window')),
+                        'personalizar': (args) => {
+                            if (args && args.length > 1 && args[0].toLowerCase() === 'matrix') {
+                                if (args[1].toLowerCase() === 'on') { DesktopManager.MatrixRain.start(); Utils.typeTextEffect(DOM.terminalOutput, "\nEfeito Matrix Ativado.", 20); }
+                                else if (args[1].toLowerCase() === 'off') { DesktopManager.MatrixRain.stop(); Utils.typeTextEffect(DOM.terminalOutput, "\nEfeito Matrix Desativado.", 20); }
+                                else Utils.typeTextEffect(DOM.terminalOutput, "\nUso: personalizar matrix <on|off>", 20);
+                            } else Utils.typeTextEffect(DOM.terminalOutput, "\nOpções: 'personalizar matrix on' ou 'personalizar matrix off'.\nPara temas e aparência, use o comando 'temas'.", 20);
+                        },
+                        'ecoEterno': () => {
+                            const lutoMessage = ["\nAs estrelas que brilham mais intensamente, por vezes, são as que se apagam mais cedo.","Sua luz, no entanto, não se extingue; reverbera no cosmos da memória,","um eco eterno de risos, sonhos e momentos compartilhados.","Em cada desafio superado, em cada alegria redescoberta,","sua força nos impulsiona, sua ausência nos ensina o valor do agora.","Até que nossos caminhos se cruzem novamente, em alguma constelação distante.","Saudades, Gaviota. (2021)"].join("\n");
+                            Utils.typeTextEffect(DOM.terminalOutput, lutoMessage, 30);
+                        },
+                        'showimg': (args) => {
+                            if (args && args.length > 0) {
+                                const imgElement = document.createElement('img');
+                                imgElement.src = args[0]; imgElement.alt = 'Imagem do Terminal';
+                                Object.assign(imgElement.style, { maxWidth: '90%', maxHeight: '200px', marginTop: '10px', display: 'block', marginLeft: 'auto', marginRight: 'auto' });
+                                imgElement.onerror = () => Utils.typeTextEffect(DOM.terminalOutput, `\nErro ao carregar imagem: ${args[0]}`, 20);
+                                DOM.terminalOutput.appendChild(document.createElement('br')); DOM.terminalOutput.appendChild(imgElement);
+                                DOM.terminalOutput.scrollTop = DOM.terminalOutput.scrollHeight;
+                                setTimeout(() => Utils.typeTextEffect(DOM.terminalOutput, "", 0), 100); // Para adicionar o prompt de volta
+                            } else Utils.typeTextEffect(DOM.terminalOutput, "\nUso: showimg <url_da_imagem>", 20);
+                        },
+                        'date': () => Utils.typeTextEffect(DOM.terminalOutput, `\n${new Date().toLocaleString('pt-BR')}`, 20),
+                        'calc': (args) => {
+                            if (args && args.length > 0) {
+                                try {
+                                    const result = eval(args.join('').replace(/[^-()\d/*+.]/g, ''));
+                                    Utils.typeTextEffect(DOM.terminalOutput, `\nResultado: ${result}`, 20);
+                                } catch (e) { Utils.typeTextEffect(DOM.terminalOutput, `\nErro na expressão: ${e.message}`, 20); }
+                            } else Utils.typeTextEffect(DOM.terminalOutput, "\nUso: calc <expressão_matemática>", 20);
+                        },
+                        'fortune': () => {
+                            const fortunes = ["A sorte favorece os audazes.", "Grandes realizações exigem tempo.", "Acredite em si mesmo e tudo será possível.", "Um novo começo está a caminho.", "A paciência é uma virtude.", "Seu código compilará de primeira hoje!", "DokasOS: Tão estável quanto um pudim em um terremoto.", "O melhor profeta do futuro é o passado... ou um bom 'git log'.", "Não tema os bugs, tema a ausência de café.", "Lembre-se: ;"];
+                            Utils.typeTextEffect(DOM.terminalOutput, `\n${fortunes[Math.floor(Math.random() * fortunes.length)]}`, 20);
+                        },
+                        'whoami': () => Utils.typeTextEffect(DOM.terminalOutput, "\ndokas", 20),
+                        'pwd': () => Utils.typeTextEffect(DOM.terminalOutput, "\n/home/dokas", 20),
+                        'neofetch': () => {
+                            const neofetchArt = `
+          <span style="color: var(--theme-accent);">dokas</span>@<span style="color: var(--theme-primary);">dokasos</span>
+          ---------
+          <span style="color: var(--theme-accent);">OS</span>: DokasOS Mysterium 1.7 "Nebulosa Gamer"
+          <span style="color: var(--theme-accent);">Kernel</span>: JavaScript V8 (Probably)
+          <span style="color: var(--theme-accent);">Uptime</span>: ${Math.floor(performance.now() / 60000)} mins
+          <span style="color: var(--theme-accent);">Packages</span>: 42 (npm)
+          <span style="color: var(--theme-accent);">Shell</span>: dokas-shell 1.6
+          <span style="color: var(--theme-accent);">Resolution</span>: ${window.innerWidth}x${window.innerHeight}
+          <span style="color: var(--theme-accent);">DE</span>: DokasDE
+          <span style="color: var(--theme-accent);">WM</span>: WindowManager.js
+          <span style="color: var(--theme-accent);">Theme</span>: Dynamic [JS]
+          <span style="color: var(--theme-accent);">Icons</span>: FontAwesome [TTF]
+          <span style="color: var(--theme-accent);">Terminal</span>: extras-window
+          <span style="color: var(--theme-accent);">CPU</span>: Your Brain (Simulated)
+          <span style="color: var(--theme-accent);">GPU</span>: Imagination Renderer
+          <span style="color: var(--theme-accent);">Memory</span>: ??? MiB / ∞ MiB`;
+                            // Usar innerHTML aqui é necessário para as spans de cor, mas tenha cuidado com XSS se o conteúdo fosse dinâmico.
+                            DOM.terminalOutput.innerHTML += neofetchArt.replace(/\n/g, '<br>').replace(/ /g, ' ');
+                            DOM.terminalOutput.scrollTop = DOM.terminalOutput.scrollHeight;
+                            Utils.typeTextEffect(DOM.terminalOutput, "", 0); // Para adicionar o prompt
+                        }
+                    };
+                },
+                handleInput: (e) => {
+                    if (AppState.streamOS.sokoban.isRunning || AppState.streamOS.snake.isRunning) {
+                        if (document.activeElement !== DOM.terminalInput) { e.preventDefault(); return; }
+                    }
+                    if (e.key === 'Enter' && DOM.terminalInput && DOM.terminalOutput) {
+                        const commandInput = DOM.terminalInput.value.trim();
+                        const [command, ...args] = commandInput.split(' ');
+                        DOM.terminalInput.value = '';
+                        SoundManager.playCommandSent();
+
+                        Utils.typeTextEffect(DOM.terminalOutput, commandInput, 30, () => {
+                            const action = Config.terminalCommands[command.toLowerCase()];
+                            if (typeof action === 'function') {
+                                action(args);
+                            } else if (action) {
+                                Utils.typeTextEffect(DOM.terminalOutput, `\n${action}`, 20);
+                            } else {
+                                Utils.typeTextEffect(DOM.terminalOutput, `\nComando '${command}' não reconhecido. Digite 'help'.`, 20);
+                                SoundManager.playError();
+                            }
+                        }, true);
+                    }
+                }
+            },
+            Notepad: {
+                todos: Utils.getFromLocalStorage(Config.localStorageKeys.todos, []),
+                init: () => {
+                    const notepadTextarea = document.getElementById('notepad-textarea');
+                    const saveNoteBtn = document.getElementById('save-note-btn');
+                    const clearNoteBtn = document.getElementById('clear-note-btn');
+                    const todoInput = document.getElementById('todo-input');
+                    const addTodoBtn = document.getElementById('add-todo-btn');
+                    const notepadTabs = document.querySelectorAll('.notepad-tab');
+                    const notepadContentAreas = document.querySelectorAll('.notepad-content-area');
+
+                    notepadTabs.forEach(tab => {
+                        tab.addEventListener('click', () => {
+                            notepadTabs.forEach(t => t.classList.remove('active'));
+                            tab.classList.add('active');
+                            notepadContentAreas.forEach(area => area.classList.remove('active'));
+                            document.getElementById(tab.dataset.tab + '-content').classList.add('active');
+                            SoundManager.playClick();
+                        });
+                    });
+
+                    if(notepadTextarea) notepadTextarea.value = Utils.getFromLocalStorage(Config.localStorageKeys.notepadText, '');
+                    if(saveNoteBtn) saveNoteBtn.addEventListener('click', () => {
+                        Utils.saveToLocalStorage(Config.localStorageKeys.notepadText, notepadTextarea.value);
+                        SoundManager.playSuccess("G4");
+                    });
+                    if(clearNoteBtn) clearNoteBtn.addEventListener('click', () => {
+                        notepadTextarea.value = '';
+                        localStorage.removeItem(Config.localStorageKeys.notepadText);
+                        SoundManager.playClick();
+                    });
+
+                    if(addTodoBtn) addTodoBtn.addEventListener('click', AppModules.Notepad.addTodo);
+                    if(todoInput) todoInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') AppModules.Notepad.addTodo(); });
+                    AppModules.Notepad.renderTodos();
+                },
+                renderTodos: () => {
+                    const todoListUl = document.getElementById('todo-list');
+                    if (!todoListUl) return;
+                    todoListUl.innerHTML = '';
+                    AppModules.Notepad.todos.forEach((todo, index) => {
+                        const li = document.createElement('li');
+                        li.className = `flex items-center justify-between py-2 px-1 border-b border-[var(--theme-window-border)] cursor-pointer ${todo.completed ? 'opacity-60' : ''}`;
+                        Utils.renderHTML(li, `<span class="${todo.completed ? 'line-through' : ''}">${todo.text}</span><button data-index="${index}" class="text-red-500 hover:text-red-700 text-xs">✖</button>`);
+                        li.querySelector('span').addEventListener('click', () => AppModules.Notepad.toggleTodo(index));
+                        li.querySelector('button').addEventListener('click', () => AppModules.Notepad.removeTodo(index));
+                        todoListUl.appendChild(li);
+                    });
+                },
+                addTodo: () => {
+                    const todoInput = document.getElementById('todo-input');
+                    if(!todoInput) return;
+                    const text = todoInput.value.trim();
+                    if (text) {
+                        AppModules.Notepad.todos.push({ text, completed: false });
+                        todoInput.value = '';
+                        AppModules.Notepad.saveAndRenderTodos();
+                        SoundManager.playSuccess("E4");
+                    }
+                },
+                toggleTodo: (index) => {
+                    AppModules.Notepad.todos[index].completed = !AppModules.Notepad.todos[index].completed;
+                    AppModules.Notepad.saveAndRenderTodos();
+                    SoundManager.playClick();
+                },
+                removeTodo: (index) => {
+                    AppModules.Notepad.todos.splice(index, 1);
+                    AppModules.Notepad.saveAndRenderTodos();
+                    SoundManager.playClick();
+                },
+                saveAndRenderTodos: () => {
+                    Utils.saveToLocalStorage(Config.localStorageKeys.todos, AppModules.Notepad.todos);
+                    AppModules.Notepad.renderTodos();
+                }
+            },
+            AboutOS: {
+                init: () => {
+                    const changelogList = document.getElementById('changelog-list');
+                    const buildDateEl = document.getElementById('os-build-date');
+                    if (changelogList) {
+                        changelogList.innerHTML = '';
+                        Config.changelogEntries.forEach(entry => {
+                            const li = document.createElement('li');
+                            li.textContent = entry;
+                            changelogList.appendChild(li);
+                        });
+                    }
+                    if(buildDateEl) buildDateEl.textContent = new Date().toLocaleDateString('pt-BR', { year: 'numeric', month: 'long', day: 'numeric' });
+                }
+            },
+            MyJourney: {
+                init: () => {
+                    const container = document.getElementById('timeline-container');
+                    if (container) {
+                        Config.journeyEntries.forEach(entry => {
+                            const itemDiv = document.createElement('div');
+                            itemDiv.className = 'timeline-item';
+                            Utils.renderHTML(itemDiv, `<div class="timeline-date">${entry.date}</div><p class="timeline-description">${entry.description}</p>`);
+                            container.appendChild(itemDiv);
+                        });
+                    }
+                }
+            },
+            Hobbies: {
+                init: () => {
+                    const container = document.getElementById('hobbies-container');
+                    if (container) {
+                        Config.hobbiesData.forEach(hobby => {
+                            const itemDiv = document.createElement('div');
+                            itemDiv.className = 'hobby-item';
+                            Utils.renderHTML(itemDiv, `<i class="fas ${hobby.icon}"></i><div class="hobby-details"><h4>${hobby.name}</h4><p>${hobby.description}</p></div>`);
+                            container.appendChild(itemDiv);
+                        });
+                    }
+                }
+            },
+            Amigos: {
+                init: () => {
+                    const container = document.getElementById('amigos-list');
+                    if (container) {
+                        Config.amigosData.forEach(amigo => {
+                            const card = document.createElement('div');
+                            card.className = 'friend-card';
+                            Utils.renderHTML(card, `<h3>${amigo.nome}</h3><p>${amigo.descricao}</p><p class="status">Status: ${amigo.status}</p>`);
+                            container.appendChild(card);
+                        });
+                    }
+                }
+            },
+            StreamOS: {
+                init: () => {
+                    const gameListUl = document.querySelector('#streamos-window .streamos-game-list');
+                    if (gameListUl) {
+                        gameListUl.innerHTML = ''; // Limpa a lista
+                        Config.streamOSGames.forEach(game => {
+                            const li = document.createElement('li');
+                            li.className = 'streamos-game-item';
+                            li.dataset.game = game.id;
+                            li.textContent = game.name;
+                            li.addEventListener('click', () => {
+                                AppModules.StreamOS.loadGame(game.id);
+                                SoundManager.playClick();
+                            });
+                            gameListUl.appendChild(li);
+                        });
+                    }
+                },
+                loadGame: (gameId) => {
+                    StreamOSGames.stopCurrentGame(); // Para qualquer jogo anterior
+                    AppState.streamOS.currentGameId = gameId;
+                    const displayArea = document.getElementById('streamos-game-display-area');
+                    if (!displayArea) return;
+
+                    displayArea.innerHTML = ''; // Limpa área de display
+                    document.querySelectorAll('#streamos-window .streamos-game-item').forEach(item => item.classList.remove('active'));
+                    document.querySelector(`#streamos-window .streamos-game-item[data-game="${gameId}"]`)?.classList.add('active');
+
+                    const gameConfig = Config.streamOSGames.find(g => g.id === gameId);
+                    if (!gameConfig) {
+                        Utils.renderHTML(displayArea, '<div class="game-placeholder">Jogo não encontrado!</div>');
+                        return;
+                    }
+
+                    if (gameId === 'sokoban') {
+                        Utils.renderHTML(displayArea, `
+                            <div class="streamos-game-info mb-2">
+                                <h3>${gameConfig.name}</h3>
+                                <p id="sokoban-score-display">Nível: 1 | Movimentos: 0</p>
+                                <p class="text-xs">${gameConfig.description}</p>
+                            </div>
+                            <canvas id="streamos-sokoban-canvas" class="streamos-game-canvas"></canvas>`);
+                        AppState.streamOS.sokoban.canvas = document.getElementById('streamos-sokoban-canvas');
+                        StreamOSGames.Sokoban.init();
+                    } else if (gameId === 'snake') {
+                        Utils.renderHTML(displayArea, `
+                            <div class="streamos-game-info mb-2">
+                                <h3>${gameConfig.name}</h3>
+                                <p id="snake-score-display">Score: 0</p>
+                                <p class="text-xs">${gameConfig.description}</p>
+                            </div>
+                            <canvas id="streamos-snake-canvas" class="streamos-game-canvas"></canvas>`);
+                        AppState.streamOS.snake.canvas = document.getElementById('streamos-snake-canvas');
+                        StreamOSGames.Snake.init();
+                    } else { // Para "Novo Jogo" ou outros placeholders
+                         Utils.renderHTML(displayArea, `<div class="streamos-game-info"><h3>${gameConfig.name}</h3><p>${gameConfig.description}</p></div>`);
+                    }
+                }
+            }
+        };
+
+        // ----------------------------------------------------------------------------- //
+        // MÓDULO DE JOGOS DO STREAM OS                                                  //
+        // ----------------------------------------------------------------------------- //
+        const StreamOSGames = {
+            stopCurrentGame: () => {
+                if (AppState.streamOS.currentGameId === 'sokoban' && AppState.streamOS.sokoban.isRunning) {
+                    StreamOSGames.Sokoban.gameOver(true); // manualExit = true
+                } else if (AppState.streamOS.currentGameId === 'snake' && AppState.streamOS.snake.isRunning) {
+                    StreamOSGames.Snake.gameOver(true); // manualExit = true
+                }
+                AppState.streamOS.currentGameId = null;
+            },
+            Sokoban: {
+                init: () => {
+                    const sState = AppState.streamOS.sokoban;
+                    const sCfg = Config.sokoban;
+                    if (!sState.canvas) return;
+                    sState.isRunning = true;
+                    sState.ctx = sState.canvas.getContext('2d');
+                    sState.canvas.width = sCfg.COLS * sCfg.GRID_SIZE;
+                    sState.canvas.height = sCfg.ROWS * sCfg.GRID_SIZE;
+                    sState.currentLevelIndex = 0; // Começa sempre do nível 0 ao iniciar
+                    StreamOSGames.Sokoban.loadLevel(sState.currentLevelIndex);
+                    StreamOSGames.Sokoban.draw();
+                    document.addEventListener('keydown', StreamOSGames.Sokoban.handleInput);
+                    StreamOSGames.Sokoban.updateScoreDisplay();
+                },
+                loadLevel: (levelIndex) => {
+                    const sState = AppState.streamOS.sokoban;
+                    const sCfg = Config.sokoban;
+                    if (levelIndex >= sCfg.levels.length) {
+                        StreamOSGames.Sokoban.gameOver(false, true, true); // won, allLevelsCompleted
+                        return;
+                    }
+                    sState.levelData = sCfg.levels[levelIndex].map(row => row.split(''));
+                    sState.boxes = []; sState.targets = []; sState.moves = 0;
+                    for (let y = 0; y < sCfg.ROWS; y++) {
+                        for (let x = 0; x < sCfg.COLS; x++) {
+                            const char = sState.levelData[y][x];
+                            if (char === sCfg.PLAYER_CHAR) { sState.player = { x, y }; sState.levelData[y][x] = sCfg.EMPTY_CHAR; }
+                            else if (char === sCfg.BOX_CHAR) { sState.boxes.push({ x, y }); sState.levelData[y][x] = sCfg.EMPTY_CHAR; }
+                            else if (char === sCfg.TARGET_CHAR) { sState.targets.push({ x, y }); }
+                            else if (char === sCfg.BOX_ON_TARGET_CHAR) {
+                                sState.boxes.push({ x, y }); sState.targets.push({ x, y });
+                                sState.levelData[y][x] = sCfg.TARGET_CHAR; // O fundo é um alvo
+                            }
+                        }
+                    }
+                },
+                draw: () => {
+                    const sState = AppState.streamOS.sokoban;
+                    const sCfg = Config.sokoban;
+                    if (!sState.ctx || !sState.isRunning) return;
+                    sState.ctx.clearRect(0,0, sState.canvas.width, sState.canvas.height);
+                    sState.ctx.font = `${sCfg.GRID_SIZE * 0.8}px Consolas, Monaco, monospace`;
+                    sState.ctx.textAlign = 'center'; sState.ctx.textBaseline = 'middle';
+
+                    for (let y = 0; y < sCfg.ROWS; y++) {
+                        for (let x = 0; x < sCfg.COLS; x++) {
+                            const charX = x * sCfg.GRID_SIZE + sCfg.GRID_SIZE / 2;
+                            const charY = y * sCfg.GRID_SIZE + sCfg.GRID_SIZE / 2;
+                            const isTarget = sState.targets.some(t => t.x === x && t.y === y);
+                            if (isTarget) {
+                                sState.ctx.fillStyle = 'rgba(167, 139, 250, 0.3)';
+                                sState.ctx.fillRect(x * sCfg.GRID_SIZE, y * sCfg.GRID_SIZE, sCfg.GRID_SIZE, sCfg.GRID_SIZE);
+                            }
+                            let charToDraw = sState.levelData[y][x];
+                            let charColor = '#505050'; // Cor padrão para paredes
+                            if (sState.player.x === x && sState.player.y === y) {
+                                charToDraw = sCfg.PLAYER_CHAR; charColor = DOM.rootStyle.getPropertyValue('--theme-accent').trim();
+                            } else if (sState.boxes.some(b => b.x === x && b.y === y)) {
+                                charToDraw = isTarget ? sCfg.BOX_ON_TARGET_CHAR : sCfg.BOX_CHAR;
+                                charColor = isTarget ? '#34D399' : '#FBBF24';
+                            } else if (isTarget && charToDraw !== sCfg.WALL_CHAR) continue; // Não desenha alvo vazio sobre o fundo
+
+                            if (charToDraw !== sCfg.EMPTY_CHAR) {
+                                sState.ctx.fillStyle = charColor;
+                                sState.ctx.fillText(charToDraw, charX, charY + sCfg.GRID_SIZE * 0.1);
+                            }
+                        }
+                    }
+                },
+                handleInput: (e) => {
+                    const sState = AppState.streamOS.sokoban;
+                    const sCfg = Config.sokoban;
+                    if (!sState.isRunning || AppState.activeWindow?.id !== 'streamos-window' || AppState.streamOS.currentGameId !== 'sokoban') return;
+                    const k = e.key.toLowerCase();
+                    let dx = 0, dy = 0;
+                    if (k === 'w' || k === 'arrowup') dy = -1;
+                    else if (k === 's' || k === 'arrowdown') dy = 1;
+                    else if (k === 'a' || k === 'arrowleft') dx = -1;
+                    else if (k === 'd' || k === 'arrowright') dx = 1;
+                    else if (k === 'r') { StreamOSGames.Sokoban.loadLevel(sState.currentLevelIndex); StreamOSGames.Sokoban.draw(); StreamOSGames.Sokoban.updateScoreDisplay(); return; }
+                    else return;
+                    e.preventDefault();
+
+                    const nextPlayerX = sState.player.x + dx; const nextPlayerY = sState.player.y + dy;
+                    if (nextPlayerY < 0 || nextPlayerY >= sCfg.ROWS || nextPlayerX < 0 || nextPlayerX >= sCfg.COLS || sState.levelData[nextPlayerY][nextPlayerX] === sCfg.WALL_CHAR) return;
+
+                    const boxIndex = sState.boxes.findIndex(b => b.x === nextPlayerX && b.y === nextPlayerY);
+                    if (boxIndex !== -1) {
+                        const nextBoxX = nextPlayerX + dx; const nextBoxY = nextPlayerY + dy;
+                        if (nextBoxY < 0 || nextBoxY >= sCfg.ROWS || nextBoxX < 0 || nextBoxX >= sCfg.COLS || sState.levelData[nextBoxY][nextBoxX] === sCfg.WALL_CHAR || sState.boxes.some(b => b.x === nextBoxX && b.y === nextBoxY)) return;
+                        sState.boxes[boxIndex].x = nextBoxX; sState.boxes[boxIndex].y = nextBoxY;
+                    }
+                    sState.player.x = nextPlayerX; sState.player.y = nextPlayerY; sState.moves++;
+                    StreamOSGames.Sokoban.draw(); StreamOSGames.Sokoban.checkWin(); StreamOSGames.Sokoban.updateScoreDisplay();
+                },
+                checkWin: () => {
+                    const sState = AppState.streamOS.sokoban;
+                    const boxesOnTarget = sState.boxes.filter(box => sState.targets.some(target => target.x === box.x && target.y === box.y)).length;
+                    if (boxesOnTarget === sState.targets.length && sState.targets.length > 0) {
+                        sState.currentLevelIndex++;
+                        if (sState.currentLevelIndex >= Config.sokoban.levels.length) {
+                            StreamOSGames.Sokoban.gameOver(false, true, true); // won, allLevelsCompleted
+                        } else {
+                            StreamOSGames.Sokoban.gameOver(false, true, false); // won, levelCompleted
+                        }
+                    }
+                },
+                gameOver: (manualExit = false, won = false, allLevelsCompleted = false) => {
+                    const sState = AppState.streamOS.sokoban;
+                    document.removeEventListener('keydown', StreamOSGames.Sokoban.handleInput);
+                    sState.isRunning = false;
+                    const gameInfoArea = document.querySelector('#streamos-game-display-area .streamos-game-info');
+                    if (gameInfoArea) {
+                        let messageHtml = '';
+                        if (allLevelsCompleted) {
+                            messageHtml = `<h3>Todos os Níveis Completos!</h3><p>Você é um mestre do Sokoban!</p><button class="streamos-play-button" data-game="sokoban">Jogar Novamente (Nível 1)</button>`;
+                            sState.currentLevelIndex = 0; // Reseta para o primeiro nível
+                        } else if (won) {
+                            messageHtml = `<h3>Nível ${sState.currentLevelIndex} Completo!</h3><p>Movimentos: ${sState.moves}</p><button class="streamos-play-button" data-game="sokoban">Próximo Nível</button>`;
+                        } else if (manualExit) {
+                            messageHtml = `<h3>Sokoban Fechado</h3><p>Volte quando quiser!</p><button class="streamos-play-button" data-game="sokoban">Jogar Sokoban</button>`;
+                        }
+                        Utils.renderHTML(gameInfoArea, messageHtml);
+                        gameInfoArea.querySelector('.streamos-play-button')?.addEventListener('click', () => AppModules.StreamOS.loadGame('sokoban'));
+                    }
+                    if (won && !allLevelsCompleted) SoundManager.playSuccess("G5", "4n");
+                    else if (allLevelsCompleted) SoundManager.playSuccess("C6", "2n");
+                },
+                updateScoreDisplay: () => {
+                    const sState = AppState.streamOS.sokoban;
+                    const scoreDisplay = document.getElementById('sokoban-score-display');
+                    if (scoreDisplay) scoreDisplay.textContent = `Nível: ${sState.currentLevelIndex + 1} | Movimentos: ${sState.moves}`;
+                }
+            },
+            Snake: {
+                init: () => {
+                    const snState = AppState.streamOS.snake;
+                    const snCfg = Config.snake;
+                    if (!snState.canvas) return;
+                    snState.isRunning = true;
+                    snState.ctx = snState.canvas.getContext('2d');
+                    snState.canvas.width = snCfg.TILE_COUNT * snCfg.GRID_SIZE;
+                    snState.canvas.height = snCfg.TILE_COUNT * snCfg.GRID_SIZE;
+                    snState.snakeSegments = [{ x: Math.floor(snCfg.TILE_COUNT / 2), y: Math.floor(snCfg.TILE_COUNT / 2) }];
+                    snState.direction = { x: 1, y: 0 }; // Começa indo para a direita
+                    StreamOSGames.Snake.spawnFood();
+                    snState.score = 0;
+                    StreamOSGames.Snake.updateScoreDisplay();
+                    if (snState.gameLoopInterval) clearInterval(snState.gameLoopInterval);
+                    snState.gameLoopInterval = setInterval(StreamOSGames.Snake.gameLoop, snCfg.INITIAL_SPEED);
+                    document.addEventListener('keydown', StreamOSGames.Snake.handleInput);
+                },
+                spawnFood: () => {
+                    const snState = AppState.streamOS.snake;
+                    const snCfg = Config.snake;
+                    do {
+                        snState.food = { x: Math.floor(Math.random() * snCfg.TILE_COUNT), y: Math.floor(Math.random() * snCfg.TILE_COUNT) };
+                    } while (snState.snakeSegments.some(seg => seg.x === snState.food.x && seg.y === snState.food.y));
+                },
+                gameLoop: () => {
+                    const snState = AppState.streamOS.snake;
+                    const snCfg = Config.snake;
+                    if (!snState.isRunning) return;
+                    let head = { x: snState.snakeSegments[0].x + snState.direction.x, y: snState.snakeSegments[0].y + snState.direction.y };
+
+                    // Atravessar paredes
+                    if (head.x < 0) head.x = snCfg.TILE_COUNT - 1; else if (head.x >= snCfg.TILE_COUNT) head.x = 0;
+                    if (head.y < 0) head.y = snCfg.TILE_COUNT - 1; else if (head.y >= snCfg.TILE_COUNT) head.y = 0;
+
+                    // Colisão com o próprio corpo
+                    if (snState.snakeSegments.slice(1).some(seg => seg.x === head.x && seg.y === head.y)) {
+                        StreamOSGames.Snake.gameOver(); return;
+                    }
+                    snState.snakeSegments.unshift(head); // Adiciona nova cabeça
+                    if (head.x === snState.food.x && head.y === snState.food.y) { // Comeu a comida
+                        snState.score++; StreamOSGames.Snake.updateScoreDisplay(); StreamOSGames.Snake.spawnFood(); SoundManager.playSuccess("C4", "32n");
+                    } else {
+                        snState.snakeSegments.pop(); // Remove a cauda se não comeu
+                    }
+                    StreamOSGames.Snake.draw();
+                },
+                draw: () => {
+                    const snState = AppState.streamOS.snake;
+                    const snCfg = Config.snake;
+                    if (!snState.ctx || !snState.isRunning) return;
+                    snState.ctx.fillStyle = '#222'; // Fundo do jogo
+                    snState.ctx.fillRect(0, 0, snState.canvas.width, snState.canvas.height);
+                    snState.ctx.fillStyle = DOM.rootStyle.getPropertyValue('--theme-accent').trim() || '#a855f7'; // Cor da cobra
+                    snState.snakeSegments.forEach(seg => snState.ctx.fillRect(seg.x * snCfg.GRID_SIZE, seg.y * snCfg.GRID_SIZE, snCfg.GRID_SIZE - 1, snCfg.GRID_SIZE - 1));
+                    snState.ctx.fillStyle = '#f00'; // Cor da comida
+                    snState.ctx.fillRect(snState.food.x * snCfg.GRID_SIZE, snState.food.y * snCfg.GRID_SIZE, snCfg.GRID_SIZE - 1, snCfg.GRID_SIZE - 1);
+                },
+                handleInput: (e) => {
+                    const snState = AppState.streamOS.snake;
+                    if (!snState.isRunning || AppState.activeWindow?.id !== 'streamos-window' || AppState.streamOS.currentGameId !== 'snake') return;
+                    e.preventDefault();
+                    const k = e.key.toLowerCase();
+                    if ((k === 'w' || k === 'arrowup') && snState.direction.y === 0) snState.direction = { x: 0, y: -1 };
+                    else if ((k === 's' || k === 'arrowdown') && snState.direction.y === 0) snState.direction = { x: 0, y: 1 };
+                    else if ((k === 'a' || k === 'arrowleft') && snState.direction.x === 0) snState.direction = { x: -1, y: 0 };
+                    else if ((k === 'd' || k === 'arrowright') && snState.direction.x === 0) snState.direction = { x: 1, y: 0 };
+                },
+                gameOver: (manualExit = false) => {
+                    const snState = AppState.streamOS.snake;
+                    if(snState.gameLoopInterval) clearInterval(snState.gameLoopInterval);
+                    document.removeEventListener('keydown', StreamOSGames.Snake.handleInput);
+                    snState.isRunning = false;
+                    const gameInfoArea = document.querySelector('#streamos-game-display-area .streamos-game-info');
+                    if (gameInfoArea) {
+                        let messageHtml = manualExit ?
+                            `<h3>Snake Fechado</h3><p>Score final: ${snState.score}</p>` :
+                            `<h3>Fim de Jogo!</h3><p>Score: ${snState.score}</p>`;
+                        messageHtml += `<button class="streamos-play-button" data-game="snake">Jogar Novamente</button>`;
+                        Utils.renderHTML(gameInfoArea, messageHtml);
+                        gameInfoArea.querySelector('.streamos-play-button')?.addEventListener('click', () => AppModules.StreamOS.loadGame('snake'));
+                    }
+                    if (!manualExit) SoundManager.playError("A3", "4n");
+                },
+                updateScoreDisplay: () => {
+                    const scoreDisplay = document.getElementById('snake-score-display');
+                    if (scoreDisplay) scoreDisplay.textContent = `Score: ${AppState.streamOS.snake.score}`;
+                }
+            }
+        };
+
+
+        // ----------------------------------------------------------------------------- //
+        // INICIALIZAÇÃO PRINCIPAL DO DOKAS OS                                           //
+        // ----------------------------------------------------------------------------- //
+        const DokasOS = {
+            init: () => {
+                console.log("DokasOS Otimizado - Inicializando...");
+                SoundManager.init(); // Tenta inicializar sons (pode precisar de interação do usuário)
+                ThemeManager.init();
+                DesktopManager.init();
+                WindowManager.init();
+                YouTubePlayerManager.init(); // Carrega API do YouTube e configura player
+
+                // Inicializa módulos de aplicativos
+                AppModules.Spotify.init();
+                AppModules.Projects.init();
+                AppModules.AboutMe.init();
+                AppModules.Terminal.init();
+                AppModules.Notepad.init();
+                AppModules.AboutOS.init();
+                AppModules.MyJourney.init();
+                AppModules.Hobbies.init();
+                AppModules.Amigos.init();
+                AppModules.StreamOS.init();
+
+
+                // Abrir janela de boas-vindas (Dokas Assistente) se for a primeira vez ou configurado
+                const assistantWindow = document.getElementById('dokas-assistant-prompt-window');
+                if (assistantWindow) { // Sempre abre o assistente ao iniciar
+                    setTimeout(() => WindowManager.open(assistantWindow), 500); // Pequeno delay para dar tempo de carregar
+                }
+
+                console.log("DokasOS Otimizado - Pronto!");
+            }
+        };
+
+        DokasOS.init(); // Inicia o sistema operacional!
+    });
+    </script>
+</body>
+</html>
