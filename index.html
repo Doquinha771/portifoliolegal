@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>DokasOS - Edição Final</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" xintegrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -55,6 +55,7 @@
         #audio-visualizer-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 50px; pointer-events: none; opacity: 0.6; }
         .terminal-output { background-color: rgba(13, 17, 23, 0.9); color: #2ecc71; font-family: var(--font-mono); font-size: 1.1rem; white-space: pre-wrap; overflow-y: auto; border-radius: 0; padding: 1rem; line-height: 1.6; flex-grow: 1; }
         .terminal-input { background-color: transparent; color: #2ecc71; font-family: var(--font-mono); font-size: 1.1rem; border: none; outline: none; width: calc(100% - 1.5rem); padding: 0.5rem; margin-left: 0.5rem; }
+        /* Estilos de Apps */
         #spotify-content { background: linear-gradient(to top, #121212 50%, #1d2a38); }
         #amigos-content { display: flex; } #journey-content { background: #000; }
         #about-content { background: #121212; } #projects-content { background: #030303; }
@@ -62,18 +63,21 @@
         @media (max-width: 767px) {
             body { -webkit-text-size-adjust: 100%; }
             .desktop-bg { justify-content: flex-start; }
-            .window { width: 100vw !important; height: 100vh !important; top: 0 !important; left: 0 !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; resize: none !important; transform: translateX(100%); opacity: 1; }
+            .window { width: 100% !important; height: 100% !important; top: 0 !important; left: 0 !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; resize: none !important; transform: translateX(100%); opacity: 1; }
             .window.open { transform: translateX(0%); }
             .window-header { border-radius: 0; padding-top: calc(env(safe-area-inset-top, 0) + 0.7rem); padding-left: calc(env(safe-area-inset-left, 0) + 1rem); padding-right: calc(env(safe-area-inset-right, 0) + 1rem); }
             #icon-dock { width: 100%; bottom: 0; left: 0; border-radius: 0; border-top: 1px solid var(--theme-icon-dock-border); justify-content: space-around; padding: 8px calc(env(safe-area-inset-right, 0) + 8px) calc(env(safe-area-inset-bottom, 0) + 8px) calc(env(safe-area-inset-left, 0) + 8px); height: auto; }
-            #taskbar { top: 0; left: 0; right: 0; width: 100%; border-radius: 0; justify-content: space-between; padding: 5px calc(env(safe-area-inset-right, 0) + 10px) 5px calc(env(safe-area-inset-left, 0) + 10px); height: calc(env(safe-area-inset-top, 0) + 45px); align-items: flex-end; padding-bottom: 5px; }
+            #taskbar { display: none; } /* Oculta taskbar em mobile para uma UI mais limpa */
             #amigos-content { flex-direction: column; }
             #amigos-content > aside, #amigos-content > main { width: 100% !important; }
             #amigos-content > main { display: none; }
             #amigos-content.chat-view > aside { display: none; }
             #amigos-content.chat-view > main { display: flex; }
-            #journey-content .h-3\/5 { height: 50%; } /* Ajuste para tela de jornada no mobile */
+            #journey-content .h-3\/5 { height: 50%; } 
             #journey-content h1 { font-size: 2.5rem; }
+            #projects-content > .flex { flex-direction: column; }
+            #projects-content aside { display: none; }
+            #projects-content .pr-4 { padding-right: 0; }
         }
     </style>
 </head>
@@ -127,8 +131,8 @@
     };
 
     const Config = {
-        localStorageKeys: { windowStates: 'dokasOsWindowStates_v16', volume: 'dokasOsVolume_v13'},
-        ytPlayer: { videoId: 'jfKfPfyJRdk', initialVolume: 15 },
+        localStorageKeys: { windowStates: 'dokasOsWindowStates_v17', volume: 'dokasOsVolume_v14'},
+        ytPlayer: { videoId: 'XhBrigOWvUQ', initialVolume: 15 },
         iconData: [
             { id: 'about-icon', windowId: 'about-window', faClass: 'fas fa-user-astronaut', text: 'Perfil' }, { id: 'projects-icon', windowId: 'projects-window', faClass: 'fas fa-rocket', text: 'Projetos' },
             { id: 'my-journey-icon', windowId: 'my-journey-window', faClass: 'fas fa-film', text: 'Jornada'}, { id: 'hobbies-icon', windowId: 'hobbies-window', faClass: 'fas fa-book-reader', text: 'Skills'},
