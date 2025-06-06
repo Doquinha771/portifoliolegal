@@ -43,7 +43,7 @@
         .window-content { flex-grow: 1; overflow: auto; padding: 0; }
         @keyframes app-intro { 0% { transform: translateY(30px) scale(0.95); opacity: 0; filter: blur(5px); } 100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0px); } }
         .app-entering > * { animation: app-intro 0.6s 0.1s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-        #icon-dock { display: flex; gap: 16px; padding: 12px 20px; background-color: var(--theme-icon-dock-bg); backdrop-filter: blur(18px) saturate(160%); border-radius: 20px; box-shadow: 0 12px 35px rgba(0,0,0,0.5), inset 0 0 0 1.5px var(--theme-icon-dock-border); z-index: 150; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); }
+        #icon-dock { display: flex; gap: 16px; padding: 12px 20px; background-color: var(--theme-icon-dock-bg); backdrop-filter: blur(18px) saturate(160%); border-radius: 20px; box-shadow: 0 12px 35px rgba(0,0,0,0.5), inset 0 0 0 1.5px var(--theme-icon-dock-border); z-index: 150; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
         .icon-item { width: 60px; height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--theme-desktop-icon-color); cursor: pointer; border-radius: 10px; background-color: transparent; transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), background-color 0.2s ease-out; user-select: none; }
         .icon-item i { font-size: 2rem; margin-bottom: 0.3rem; transition: transform 0.3s ease; }
         .icon-item:hover { transform: translateY(-8px); background-color: var(--theme-desktop-icon-bg-hover); } .icon-item:hover i { transform: scale(1.1); } .icon-item:active { transform: translateY(-4px) scale(0.95); }
@@ -66,8 +66,9 @@
             .window { width: 100% !important; height: 100% !important; top: 0 !important; left: 0 !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; resize: none !important; transform: translateX(100%); opacity: 1; }
             .window.open { transform: translateX(0%); }
             .window-header { border-radius: 0; padding-top: calc(env(safe-area-inset-top, 0) + 0.7rem); padding-left: calc(env(safe-area-inset-left, 0) + 1rem); padding-right: calc(env(safe-area-inset-right, 0) + 1rem); }
-            #icon-dock { width: 100%; bottom: 0; left: 0; border-radius: 0; border-top: 1px solid var(--theme-icon-dock-border); justify-content: space-around; padding: 8px calc(env(safe-area-inset-right, 0) + 8px) calc(env(safe-area-inset-bottom, 0) + 8px) calc(env(safe-area-inset-left, 0) + 8px); height: auto; }
-            #taskbar { display: none; } /* Oculta taskbar em mobile para uma UI mais limpa */
+            #icon-dock { width: 90%; max-width: 500px; left: 50%; bottom: 20px; transform: translateX(-50%); padding: 8px; justify-content: space-around; overflow-x: auto; }
+            #icon-dock.hidden-mobile { transform: translateX(-50%) translateY(150%); }
+            #taskbar { display: none; } 
             #amigos-content { flex-direction: column; }
             #amigos-content > aside, #amigos-content > main { width: 100% !important; }
             #amigos-content > main { display: none; }
@@ -131,7 +132,7 @@
     };
 
     const Config = {
-        localStorageKeys: { windowStates: 'dokasOsWindowStates_v17', volume: 'dokasOsVolume_v14'},
+        localStorageKeys: { windowStates: 'dokasOsWindowStates_v18', volume: 'dokasOsVolume_v15'},
         ytPlayer: { videoId: 'XhBrigOWvUQ', initialVolume: 15 },
         iconData: [
             { id: 'about-icon', windowId: 'about-window', faClass: 'fas fa-user-astronaut', text: 'Perfil' }, { id: 'projects-icon', windowId: 'projects-window', faClass: 'fas fa-rocket', text: 'Projetos' },
@@ -170,7 +171,7 @@
     const AppState = { activeWindow: null, zIndexCounter: 100, openWindows: {}, windowStates: JSON.parse(localStorage.getItem(Config.localStorageKeys.windowStates)) || {}, isAudioPlaying: false, ytPlayer: null, spotifyCurrentIndex: 0 };
     const DOM = {
         allWindows: document.querySelectorAll('.window'), taskbar: document.getElementById('taskbar'),
-        taskbarClock: document.getElementById('taskbar-clock'), iconDock: document.getElementById('icon-dock'),
+        iconDock: document.getElementById('icon-dock'),
         terminalOutput: document.getElementById('terminal-output'), terminalInput: document.getElementById('terminal-input'),
         audioControl: document.getElementById('audio-control'), audioPopup: document.getElementById('audio-popup'),
         volumeSlider: document.getElementById('volume-slider'), audioVisualizerCanvas: document.getElementById('audio-visualizer'),
@@ -245,6 +246,7 @@
             requestAnimationFrame(() => { win.classList.add('open'); if (!isMobile) { win.style.opacity = '1'; win.style.transform = 'scale(1) translateY(0px)'; } });
             if (!AppState.openWindows[windowId]) DesktopManager.createTaskbarIcon(win);
             DesktopManager.updateTaskbarActiveState(windowId); SoundManager.play('open', 'C5', '16n');
+            if (isMobile) DOM.iconDock.classList.add('hidden-mobile');
         },
         close(win) {
             this.saveState(win); const isMobile = window.innerWidth <= 767; win.classList.remove('open');
@@ -253,6 +255,9 @@
             setTimeout(() => {
                 win.style.display = 'none'; const windowId = win.id; if (AppState.openWindows[windowId]?.taskbarIcon) AppState.openWindows[windowId].taskbarIcon.remove();
                 delete AppState.openWindows[windowId]; if (AppState.activeWindow?.id === windowId) { AppState.activeWindow = null; DesktopManager.updateTaskbarActiveState(null); }
+                if (isMobile && Object.keys(AppState.openWindows).length === 0) {
+                    DOM.iconDock.classList.remove('hidden-mobile');
+                }
             }, 350);
         },
         bringToFront(win) { if (AppState.activeWindow?.id === win.id) return; AppState.zIndexCounter++; win.style.zIndex = AppState.zIndexCounter; DOM.allWindows.forEach(w => w.classList.remove('active-border')); win.classList.add('active-border'); AppState.activeWindow = win; DesktopManager.updateTaskbarActiveState(win.id); },
@@ -268,18 +273,18 @@
     const DesktopManager = {
         init() { this.populateIconDock(); this.initClock(); this.initWeather(); this.initAudioControls(); },
         populateIconDock() { DOM.iconDock.innerHTML = Config.iconData.map(data => `<div class="icon-item" id="${data.id}" data-window="${data.windowId}" title="${data.text}"><i class="${data.faClass}"></i></div>`).join(''); document.querySelectorAll('.icon-item').forEach(icon => icon.addEventListener('click', () => { SoundManager.play('click', 'G5', '32n'); WindowManager.open(icon.dataset.window); })); },
-        createTaskbarIcon(win) { const windowId = win.id; const iconClass = win.querySelector('.window-header i')?.className || 'fas fa-window-maximize'; const taskbarIcon = document.createElement('div'); taskbarIcon.className = 'taskbar-icon'; taskbarIcon.dataset.windowId = windowId; taskbarIcon.innerHTML = `<i class="${iconClass}"></i>`; taskbarIcon.addEventListener('click', () => { (win.style.display === 'none' || win.style.opacity === '0') ? WindowManager.open(windowId) : WindowManager.bringToFront(win); }); DOM.taskbar.insertBefore(taskbarIcon, DOM.taskbar.firstChild); AppState.openWindows[windowId] = { element: win, taskbarIcon }; },
-        updateTaskbarActiveState(activeId) { document.querySelectorAll('.taskbar-icon').forEach(icon => icon.classList.toggle('active', icon.dataset.windowId === activeId)); },
-        initClock() { const update = () => { if (DOM.taskbarClock) DOM.taskbarClock.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }; setInterval(update, 1000); update(); },
+        createTaskbarIcon(win) { const windowId = win.id; const iconClass = win.querySelector('.window-header i')?.className || 'fas fa-window-maximize'; const taskbarIcon = document.createElement('div'); taskbarIcon.className = 'taskbar-icon'; taskbarIcon.dataset.windowId = windowId; taskbarIcon.innerHTML = `<i class="${iconClass}"></i>`; taskbarIcon.addEventListener('click', () => { (win.style.display === 'none' || win.style.opacity === '0') ? WindowManager.open(windowId) : WindowManager.bringToFront(win); }); if (DOM.taskbar) DOM.taskbar.insertBefore(taskbarIcon, DOM.taskbar.firstChild); AppState.openWindows[windowId] = { element: win, taskbarIcon }; },
+        updateTaskbarActiveState(activeId) { if(DOM.taskbar) document.querySelectorAll('.taskbar-icon').forEach(icon => icon.classList.toggle('active', icon.dataset.windowId === activeId)); },
+        initClock() { const update = () => { if (DOM.taskbar && DOM.taskbarClock) DOM.taskbarClock.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }; setInterval(update, 1000); update(); },
         initWeather() { const el = document.getElementById('taskbar-weather'); if (el) { const temp = 18 + Math.floor(Math.random() * 8); el.innerHTML = `<i class="fas fa-cloud-sun"></i><span>${temp}°C</span>`; } },
-        initAudioControls() { DOM.audioControl.addEventListener('click', (e) => { e.stopPropagation(); DOM.audioPopup.style.display = DOM.audioPopup.style.display === 'flex' ? 'none' : 'flex'; }); DOM.volumeSlider.addEventListener('input', e => YouTubePlayerManager.setVolume(Number(e.target.value))); document.addEventListener('click', e => { if (!DOM.audioControl.contains(e.target) && !DOM.audioPopup.contains(e.target)) DOM.audioPopup.style.display = 'none'; }); }
+        initAudioControls() { if(DOM.audioControl) DOM.audioControl.addEventListener('click', (e) => { e.stopPropagation(); DOM.audioPopup.style.display = DOM.audioPopup.style.display === 'flex' ? 'none' : 'flex'; }); if(DOM.volumeSlider) DOM.volumeSlider.addEventListener('input', e => YouTubePlayerManager.setVolume(Number(e.target.value))); document.addEventListener('click', e => { if (DOM.audioControl && !DOM.audioControl.contains(e.target) && DOM.audioPopup && !DOM.audioPopup.contains(e.target)) DOM.audioPopup.style.display = 'none'; }); }
     };
     const YouTubePlayerManager = {
         init() { if (window.YT && window.YT.Player) this.onYouTubeIframeAPIReady(); else window.onYouTubeIframeAPIReady = this.onYouTubeIframeAPIReady.bind(this); },
         onYouTubeIframeAPIReady() { AppState.ytPlayer = new YT.Player('youtube-player', { height: '0', width: '0', videoId: Config.ytPlayer.videoId, playerVars: { 'autoplay': 1, 'controls': 0, 'loop': 1, 'playlist': Config.ytPlayer.videoId }, events: { 'onReady': this.onPlayerReady.bind(this), 'onStateChange': this.onPlayerStateChange.bind(this) } }); },
-        onPlayerReady(event) { const savedVolume = localStorage.getItem(Config.localStorageKeys.volume) || Config.ytPlayer.initialVolume; this.setVolume(Number(savedVolume)); DOM.volumeSlider.value = savedVolume; event.target.playVideo(); },
-        onPlayerStateChange(event) { AppState.isAudioPlaying = (event.data === YT.PlayerState.PLAYING); DOM.audioControl.innerHTML = `<i class="fas ${AppState.isAudioPlaying ? 'fa-volume-high' : 'fa-volume-off'}"></i>`; if (AppState.isAudioPlaying) AudioVisualizer.start(); else AudioVisualizer.stop(); },
-        setVolume(level) { if (AppState.ytPlayer) AppState.ytPlayer.setVolume(level); localStorage.setItem(Config.localStorageKeys.volume, level); DOM.audioControl.innerHTML = `<i class="fas ${level > 50 ? 'fa-volume-high' : level > 0 ? 'fa-volume-low' : 'fa-volume-off'}"></i>`; }
+        onPlayerReady(event) { const savedVolume = localStorage.getItem(Config.localStorageKeys.volume) || Config.ytPlayer.initialVolume; this.setVolume(Number(savedVolume)); if(DOM.volumeSlider) DOM.volumeSlider.value = savedVolume; event.target.playVideo(); },
+        onPlayerStateChange(event) { AppState.isAudioPlaying = (event.data === YT.PlayerState.PLAYING); if(DOM.audioControl) DOM.audioControl.innerHTML = `<i class="fas ${AppState.isAudioPlaying ? 'fa-volume-high' : 'fa-volume-off'}"></i>`; if (AppState.isAudioPlaying) AudioVisualizer.start(); else AudioVisualizer.stop(); },
+        setVolume(level) { if (AppState.ytPlayer) AppState.ytPlayer.setVolume(level); localStorage.setItem(Config.localStorageKeys.volume, level); if(DOM.audioControl) DOM.audioControl.innerHTML = `<i class="fas ${level > 50 ? 'fa-volume-high' : level > 0 ? 'fa-volume-low' : 'fa-volume-off'}"></i>`; }
     };
     const AudioVisualizer = {
         animationId: null,
