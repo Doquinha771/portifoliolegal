@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>DokasOS - Edição Final</title>
+    <title>DokasOS - O Despertar do Pensador</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" xintegrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
     <script src="https://www.youtube.com/iframe_api"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
@@ -22,10 +25,11 @@
             --theme-taskbar-icon-active-color: var(--theme-accent);
             --theme-icon-dock-bg: rgba(44, 62, 80, 0.9); --theme-icon-dock-border: rgba(26, 188, 156, 0.4);
             --theme-desktop-icon-bg-hover: rgba(62, 83, 104, 0.95); --theme-desktop-icon-color: #ecf0f1;
-            --font-main: 'Inter', sans-serif; --font-mono: 'VT323', monospace;
+            --font-main: 'Inter', sans-serif; --font-mono: 'VT323', monospace; --font-serif: 'EB Garamond', serif;
         }
         html { -webkit-tap-highlight-color: transparent; }
         body { font-family: var(--font-main); overflow: hidden; background-color: #0d1117; color: var(--theme-text-general); height: 100vh; width: 100vw; margin: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        #startup-notification { position: fixed; inset: 0; z-index: 9999; background: #0d1117; display: flex; align-items: center; justify-content: center; transition: opacity 1.5s ease-in-out; }
         #interactive-bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
         .desktop-bg { position: relative; height: 100vh; width: 100vw; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; box-sizing: border-box; }
         .window {
@@ -55,11 +59,17 @@
         #audio-visualizer-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 50px; pointer-events: none; opacity: 0.6; }
         .terminal-output { background-color: rgba(13, 17, 23, 0.9); color: #2ecc71; font-family: var(--font-mono); font-size: 1.1rem; white-space: pre-wrap; overflow-y: auto; border-radius: 0; padding: 1rem; line-height: 1.6; flex-grow: 1; }
         .terminal-input { background-color: transparent; color: #2ecc71; font-family: var(--font-mono); font-size: 1.1rem; border: none; outline: none; width: calc(100% - 1.5rem); padding: 0.5rem; margin-left: 0.5rem; }
+        
         /* Estilos de Apps */
         #spotify-content { background: linear-gradient(to top, #121212 50%, #1d2a38); }
         #amigos-content { display: flex; } #journey-content { background: #000; }
         #about-content { background: #121212; } #projects-content { background: #030303; }
         #hobbies-content { background: #1D2226; color: var(--theme-text-on-primary); }
+        #reflexoes-content { background: #f5eeda; color: #3a3a3a; font-family: var(--font-serif); }
+        .philosophical-text { font-size: 1.15rem; line-height: 1.8; text-align: justify; }
+        .philosophical-text h1 { font-size: 2.2rem; text-align: center; margin-bottom: 2rem; font-weight: 500;}
+        .philosophical-text p { margin-bottom: 1.5rem; text-indent: 2em;}
+
         @media (max-width: 767px) {
             body { -webkit-text-size-adjust: 100%; }
             .desktop-bg { justify-content: flex-start; }
@@ -79,10 +89,16 @@
             #projects-content > .flex { flex-direction: column; }
             #projects-content aside { display: none; }
             #projects-content .pr-4 { padding-right: 0; }
+            #reflexoes-content .p-8 { padding: 1.5rem; }
+            .philosophical-text { font-size: 1.1rem; line-height: 1.7; }
+            .philosophical-text h1 { font-size: 1.8rem; margin-bottom: 1.5rem; }
         }
     </style>
 </head>
 <body>
+    <div id="startup-notification">
+        <p class="text-white/70 text-lg font-serif italic">Uma reflexão para o momento...</p>
+    </div>
     <canvas id="interactive-bg-canvas"></canvas>
     <div id="desktop" class="desktop-bg">
         <div id="icon-dock"></div>
@@ -91,14 +107,14 @@
     <div id="youtube-player-container" style="position: absolute; top: -9999px; left: -9999px;"><div id="youtube-player"></div></div>
 
     <!-- JANELAS COMPLETAS -->
+    <div id="reflexoes-window" class="window"><div class="window-header"><span><i class="fas fa-scroll mr-2"></i>Reflexões</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="reflexoes-content" class="window-content"></div></div>
     <div id="spotify-window" class="window"><div class="window-header"><span><i class="fab fa-spotify mr-2"></i>Spotify</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="spotify-content" class="window-content"></div></div>
     <div id="projects-window" class="window"><div class="window-header"><span><i class="fas fa-rocket mr-2"></i>Projetos</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="projects-content" class="window-content"></div></div>
     <div id="about-window" class="window"><div class="window-header"><span><i class="fas fa-user-astronaut mr-2"></i>Perfil</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="about-content" class="window-content"></div></div>
     <div id="my-journey-window" class="window"><div class="window-header"><span><i class="fas fa-film mr-2"></i>Jornada</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="journey-content" class="window-content"></div></div>
     <div id="hobbies-window" class="window"><div class="window-header"><span><i class="fas fa-book-reader mr-2"></i>Skills</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="hobbies-content" class="window-content"></div></div>
     <div id="amigos-window" class="window"><div class="window-header"><span><i class="fas fa-comments mr-2"></i>Chat</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="amigos-content" class="window-content"></div></div>
-    <div id="about-os-window" class="window"><div class="window-header"><span><i class="fab fa-galactic-republic mr-2"></i>Sobre DokasOS</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div class="window-content p-6"><div class="app-entering"><h2 class="text-2xl font-bold mb-2 text-center">DokasOS "Edição Final"</h2><p class="text-center text-sm mb-3">Versão: <span id="os-version">6.0</span></p><hr class="border-[var(--theme-window-border)] my-4"><h3 class="text-lg font-semibold mb-2">Histórico de Versões:</h3><ul id="changelog-list" class="list-disc list-inside text-sm ml-4 mb-3 max-h-48 overflow-y-auto"></ul></div></div></div>
-    <div id="dokas-assistant-prompt-window" class="window" style="resize: none;"><div class="window-header"><span><i class="fas fa-robot mr-2"></i>Dokas Assistente</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="dokas-assistant-content" class="window-content flex flex-col items-center justify-center text-center"></div></div>
+    <div id="about-os-window" class="window"><div class="window-header"><span><i class="fab fa-galactic-republic mr-2"></i>Sobre DokasOS</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div class="window-content p-6"><div class="app-entering"><h2 class="text-2xl font-bold mb-2 text-center">DokasOS "O Despertar do Pensador"</h2><p class="text-center text-sm mb-3">Versão: <span id="os-version">7.1</span></p><hr class="border-[var(--theme-window-border)] my-4"><h3 class="text-lg font-semibold mb-2">Histórico de Versões:</h3><ul id="changelog-list" class="list-disc list-inside text-sm ml-4 mb-3 max-h-48 overflow-y-auto"></ul></div></div></div>
     <div id="extras-window" class="window"><div class="window-header"><span><i class="fas fa-terminal mr-2"></i>Terminal</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div class="window-content p-0 flex flex-col h-full bg-black/50"><div id="terminal-output" class="terminal-output"></div><div class="flex items-center p-2 border-t border-[rgba(255,255,255,0.1)]"><span class="text-[#2ecc71] font-bold">C:\></span><input type="text" id="terminal-input" class="terminal-input" autofocus></div></div></div>
     <div id="taskbar"><div id="taskbar-weather" class="taskbar-control text-xs flex items-center gap-2"></div><div id="audio-control" class="taskbar-control"><i class="fas fa-volume-off"></i></div><div id="taskbar-clock"></div></div>
     <div id="audio-popup"><input type="range" min="0" max="100" value="15" id="volume-slider"></div>
@@ -132,15 +148,16 @@
     };
 
     const Config = {
-        localStorageKeys: { windowStates: 'dokasOsWindowStates_v18', volume: 'dokasOsVolume_v15'},
-        ytPlayer: { videoId: 'XhBrigOWvUQ', initialVolume: 15 },
+        localStorageKeys: { windowStates: 'dokasOsWindowStates_v20', volume: 'dokasOsVolume_v15'},
+        ytPlayer: { videoId: 'qcj9E4Egyng', initialVolume: 15 },
         iconData: [
+            { id: 'reflexoes-icon', windowId: 'reflexoes-window', faClass: 'fas fa-scroll', text: 'Reflexões' },
             { id: 'about-icon', windowId: 'about-window', faClass: 'fas fa-user-astronaut', text: 'Perfil' }, { id: 'projects-icon', windowId: 'projects-window', faClass: 'fas fa-rocket', text: 'Projetos' },
             { id: 'my-journey-icon', windowId: 'my-journey-window', faClass: 'fas fa-film', text: 'Jornada'}, { id: 'hobbies-icon', windowId: 'hobbies-window', faClass: 'fas fa-book-reader', text: 'Skills'},
             { id: 'amigos-icon', windowId: 'amigos-window', faClass: 'fas fa-comments', text: 'Amigos'}, { id: 'spotify-icon', windowId: 'spotify-window', faClass: 'fab fa-spotify', text: 'Música' },
             { id: 'extras-icon', windowId: 'extras-window', faClass: 'fas fa-terminal', text: 'Terminal' },
         ],
-        changelogEntries: [ "v6.0 'Edição Final': Lançamento com compatibilidade mobile total e refinamentos finais.", "v5.2 'Jornada Reescrita': Narrativa e visuais da Jornada aprimorados.", "v5.1 'Refinamento Prestige': Feedback incorporado.", "v5.0 'Edição Prestige': Redesign completo dos apps.", "v4.0 'A Sublimação Estética': Redesign inicial.", "v3.0 'A Restauração Completa': Funcionalidade restaurada.", "v2.0 'O Despertar da Consciência': UI remodelada.", "v1.0 'O Nascimento da Tragédia': Lançamento." ],
+        changelogEntries: [ "v7.1: Adicionado título e música à reflexão, e uma notificação de inicialização.", "v7.0 'O Despertar do Pensador': Adicionado app de Reflexões filosóficas.", "v6.0 'Edição Final': Lançamento com compatibilidade mobile total e refinamentos finais.", "v5.2 'Jornada Reescrita': Narrativa e visuais da Jornada aprimorados.", "v5.1 'Refinamento Prestige': Feedback incorporado.", "v5.0 'Edição Prestige': Redesign completo dos apps.", "v4.0 'A Sublimação Estética': Redesign inicial.", "v3.0 'A Restauração Completa': Funcionalidade restaurada.", "v2.0 'O Despertar da Consciência': UI remodelada.", "v1.0 'O Nascimento da Tragédia': Lançamento." ],
         spotifyPlaylists: [{ name: "Chega de Derrotas 🎧", coverUrl: "https://i.pinimg.com/736x/01/85/0a/01850a3a912785833ccf73d07678cae6.jpg", spotifyUrl: "https://open.spotify.com/playlist/0hWOBR1EcHqx2tBkfFn4MS", artist: "Dokas", duration: "3:45" }, { name: "Até a Validação 💻", coverUrl: "https://i.pinimg.com/736x/d4/be/45/d4be45b1ff5e8c4ab33ab95daa12addd.jpg", spotifyUrl: "https://open.spotify.com/playlist/1qysrUbhbrMhIPEEda15rd", artist: "Dokas", duration: "4:20" }, { name: "Work, Times Up 📻", coverUrl: "https://i.pinimg.com/736x/aa/8c/cb/aa8ccbfc49fef2699aeb979bf4bb2d7f.jpg", spotifyUrl: "https://open.spotify.com/playlist/3nIIIw2hFU9fvqTjZHf8Lg", artist: "Dokas", duration: "2:55" }, ],
         projects: [{ id: 1, title: "Site de reflexões", community: "r/SideProject", author: "u/dokas", points: 1337, comments: 42, description: "Um site que serve de anotações, totalmente feito no localstorage...", imageUrl: "https://i.pinimg.com/736x/0e/2c/ad/0e2cad9b359cae21c8655b155f9351d6.jpg", demoLink: "https://holy-southern-bridge.glitch.me/" }],
         aboutContent: { photoUrl: "https://i.pinimg.com/736x/fe/ca/df/fecadf4ed575f1ed39260f532619d77d.jpg", username: "dokas.dev", posts: 6, followers: 404, following: 8, bio: `Sou Dokas, um cara qualquer das interwebis que acredita na filosofia do seguinte pressuposto, "se tudo der errado, pelo menos posso fazer piadas disso".`, projectHighlight: { title: "Site de Anotações", image: "https://i.pinimg.com/736x/0e/2c/ad/0e2cad9b359cae21c8655b155f9351d6.jpg", demoLink: "https://holy-southern-bridge.glitch.me/" } },
@@ -175,6 +192,7 @@
         terminalOutput: document.getElementById('terminal-output'), terminalInput: document.getElementById('terminal-input'),
         audioControl: document.getElementById('audio-control'), audioPopup: document.getElementById('audio-popup'),
         volumeSlider: document.getElementById('volume-slider'), audioVisualizerCanvas: document.getElementById('audio-visualizer'),
+        startupNotification: document.getElementById('startup-notification'),
     };
     if (DOM.audioVisualizerCanvas) DOM.visualizerCtx = DOM.audioVisualizerCanvas.getContext('2d');
 
@@ -225,23 +243,29 @@
             const defaultSizes = {
                 'about-window': { width: '800px', height: '650px' }, 'projects-window': { width: '850px', height: '600px' },
                 'spotify-window': { width: '420px', height: '600px' }, 'extras-window': { width: '680px', height: '450px' },
-                'dokas-assistant-prompt-window': { width: '420px', height: '280px' }, 'my-journey-window': { width: '850px', height: '650px' },
+                'my-journey-window': { width: '850px', height: '650px' },
                 'hobbies-window': { width: '650px', height: '580px' }, 'amigos-window': { width: '800px', height: '600px' },
                 'about-os-window': { width: '480px', height: '440px' },
+                'reflexoes-window': { width: '700px', height: '600px' },
             };
             const isMobile = window.innerWidth <= 767; const savedState = AppState.windowStates[windowId];
             if (!isMobile) {
                 const size = defaultSizes[windowId] || { width: '50vw', height: '60vh' };
                 win.style.width = savedState?.width || size.width; win.style.height = savedState?.height || size.height;
                 if (savedState?.top && savedState?.left) { win.style.top = savedState.top; win.style.left = savedState.left; } 
-                else { win.style.top = `calc(50% - ${parseInt(win.style.height)/2}px)`; win.style.left = `calc(50% - ${parseInt(win.style.width)/2}px + ${Math.random()*100-50}px)`; }
+                else { 
+                    const heightInt = parseInt(win.style.height, 10);
+                    const widthInt = parseInt(win.style.width, 10);
+                    win.style.top = `calc(50% - ${heightInt/2}px)`; 
+                    win.style.left = `calc(50% - ${widthInt/2}px + ${Math.random()*100-50}px)`; 
+                }
             }
             win.style.display = 'flex'; this.bringToFront(win);
             const appContent = win.querySelector('.window-content');
-            if(appContent.firstChild) {
-                appContent.firstChild.classList.remove('app-entering');
-                void appContent.firstChild.offsetWidth; 
-                appContent.firstChild.classList.add('app-entering');
+            if(appContent.firstElementChild) {
+                appContent.firstElementChild.classList.remove('app-entering');
+                void appContent.firstElementChild.offsetWidth; 
+                appContent.firstElementChild.classList.add('app-entering');
             }
             requestAnimationFrame(() => { win.classList.add('open'); if (!isMobile) { win.style.opacity = '1'; win.style.transform = 'scale(1) translateY(0px)'; } });
             if (!AppState.openWindows[windowId]) DesktopManager.createTaskbarIcon(win);
@@ -307,7 +331,7 @@
                 dokasos: () => WindowManager.open('about-os-window'), date: () => this.printOutput(new Date().toLocaleString('pt-BR')),
                 calc: (args) => { if (!args.length) return this.printOutput('Uso: calc <expressão>'); try { this.printOutput(`Resultado: ${eval(args.join('').replace(/[^-()\d/*+.]/g, ''))}`); } catch (e) { this.printOutput(`Erro na expressão.`); } },
                 fortune: () => this.printOutput(["Seu código compilará de primeira.", "A sorte favorece a mente preparada."][Math.floor(Math.random()*2)]),
-                neofetch: () => { const uptime = Math.floor(performance.now() / 60000); const art = `\n<span style="color: var(--theme-accent);">dokas</span>@<span style="color: var(--theme-primary);">dokasos</span>\n---------\n<span style="color: var(--theme-accent);">OS</span>: DokasOS Edição Final\n<span style="color: var(--theme-accent);">Uptime</span>: ${uptime} mins\n<span style="color: var(--theme-accent);">Resolution</span>: ${window.innerWidth}x${window.innerHeight}\n<span style="color: var(--theme-accent);">Terminal</span>: dokas-shell`; DOM.terminalOutput.innerHTML += art.replace(/\n/g, '<br>'); this.addPrompt(); }
+                neofetch: () => { const uptime = Math.floor(performance.now() / 60000); const art = `\n<span style="color: var(--theme-accent);">dokas</span>@<span style="color: var(--theme-primary);">dokasos</span>\n---------\n<span style="color: var(--theme-accent);">OS</span>: DokasOS O Despertar do Pensador\n<span style="color: var(--theme-accent);">Uptime</span>: ${uptime} mins\n<span style="color: var(--theme-accent);">Resolution</span>: ${window.innerWidth}x${window.innerHeight}\n<span style="color: var(--theme-accent);">Terminal</span>: dokas-shell`; DOM.terminalOutput.innerHTML += art.replace(/\n/g, '<br>'); this.addPrompt(); }
             };
         },
         handleInput(e) { if (e.key === 'Enter' && DOM.terminalInput.value) { const input = DOM.terminalInput.value.trim(); DOM.terminalOutput.innerHTML += `\n<span class="text-cyan-400">C:\\></span> ${input}`; DOM.terminalInput.value = ''; const [cmd, ...args] = input.toLowerCase().split(' '); const action = Config.terminalCommands[cmd]; if (action) action(args); else this.printOutput(`Comando '${cmd}' não reconhecido.`); } },
@@ -318,6 +342,26 @@
     const AppModules = {
         init() { Object.values(this).forEach(mod => mod.init && mod.init()); },
         AboutOS: { init() { const list = document.getElementById('changelog-list'); if (list) list.innerHTML = Config.changelogEntries.map(e => `<li>${e}</li>`).join(''); } },
+        Reflexoes: {
+            init() {
+                const container = document.getElementById('reflexoes-content');
+                if (!container) return;
+                const philosophyText = `
+                    <div class="p-8 md:p-12 app-entering">
+                        <div class="philosophical-text">
+                            <h1>O Intervalo Entre o Piscar de Olhos</h1>
+                            <p>Nasci. Pisquei os olhos e vi meus pais sorrindo. Em outro piscar, tudo mudou — vi a separação deles, vi meu pai cruzando a porta, indo embora. Só o reencontrei quatro anos depois. Entre uma piscada e outra, o mundo já não era o mesmo.</p>
+                            <p>Lembro de piscar e, de repente, estar no primeiro ano da escola, cercado de carteiras e incertezas, tentando entender onde eu me encaixava. Pisquei de novo e fui arrastado pela professora até meu lugar — talvez não por maldade, mas porque ela, como tantos outros, não sabia como lidar comigo. Outro piscar, e eu estava em pé, sem cadeira. Tinha derrubado a minha por descuido, e a professora entendeu como rebeldia. Naquele momento, foi como se o mundo estivesse dizendo que não havia espaço pra mim.</p>
+                            <p>Continuei piscando. Bati a cabeça — literalmente. Lembro da dor ao acertar a mesa da professora, empurrado por uma dinâmica cruel: uma perna na frente, um empurrão por trás. Duas pessoas me derrubando, uma fisicamente, outra emocionalmente. Pisquei e conheci meu padrasto. Não gostei dele. Pisquei de novo e ele já não estava mais ali. O que restou foi o peso da culpa, por não tê-lo compreendido, por talvez não ter dado tempo de gostar. A vida se movia rápido demais — entre chegadas e partidas, quase não havia tempo para entender o que se sentia.</p>
+                            <p>Pisquei, e a adolescência chegou. Cheia de promessas que pareciam vagas, perguntas sem respostas e uma confusão que não avisava antes de chegar. Agora, ao piscar mais uma vez, percebo que estou às portas da vida adulta — aquela fase que sempre pareceu tão distante e definitiva, mas que agora entendo como apenas mais um passo no meio de tantos outros.</p>
+                            <p>No meio de tantas piscadas, às vezes sinto que me perdi. Não sei quando exatamente — só sei que em algum momento, entre o antes e o depois, algo em mim se desencontrou. O tempo passou. E muita coisa mudou — fora de mim e, principalmente, dentro.</p>
+                            <p>Hoje, já não acredito em um único propósito esperando por nós no fim da estrada, como se a vida fosse uma missão com um destino final claro. O que vejo são fragmentos: momentos, escolhas, dores, descobertas. Pequenos propósitos que nascem e morrem no cotidiano, e que muitas vezes a gente esquece de viver de verdade.</p>
+                            <p>Talvez o sentido da vida esteja justamente aí: no intervalo entre um piscar e outro. Nos detalhes que a pressa apaga, nas pessoas que nos atravessam, nas memórias que insistem em ficar mesmo quando tudo já passou. É nesses pequenos espaços — silenciosos, rápidos, invisíveis — que, sem perceber, a gente vai se tornando quem é.</p>
+                        </div>
+                    </div>`;
+                container.innerHTML = philosophyText;
+            }
+        },
         Spotify: { 
             init() { this.render(); },
             changeTrack(direction) {
@@ -328,24 +372,24 @@
             render() {
                 const container = document.getElementById('spotify-content'); if (!container) return;
                 const nowPlaying = Config.spotifyPlaylists[AppState.spotifyCurrentIndex];
-                container.innerHTML = `<div class="p-6 flex flex-col h-full app-entering"><a href="${nowPlaying.spotifyUrl}" target="_blank"><img src="${nowPlaying.coverUrl}" class="w-full h-64 object-cover rounded-lg shadow-lg mb-4 cursor-pointer hover:scale-105 transition-transform duration-300"></a><div class="text-center"><h2 class="text-2xl font-bold">${nowPlaying.name}</h2><p class="text-md text-gray-400">${nowPlaying.artist}</p></div><div class="mt-4"><div class="h-1 bg-gray-700 rounded-full"><div class="h-1 bg-white rounded-full w-1/4"></div></div><div class="flex justify-between text-xs text-gray-400 mt-1"><span>0:58</span><span>${nowPlaying.duration}</span></div></div><div class="flex justify-center items-center gap-8 text-2xl my-4"><i id="spotify-prev" class="fas fa-backward-step text-gray-400 hover:text-white cursor-pointer"></i><div class="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center text-3xl cursor-pointer hover:scale-105 transition-transform"><i class="fas fa-pause"></i></div><i id="spotify-next" class="fas fa-forward-step text-gray-400 hover:text-white cursor-pointer"></i></div><div class="flex-grow overflow-y-auto mt-4 border-t border-gray-700/50 pt-4"><h3 class="font-bold mb-2 px-2">Todas as Playlists</h3><div class="space-y-2">${Config.spotifyPlaylists.map(p => `<a href="${p.spotifyUrl}" target="_blank" class="flex items-center gap-4 p-2 rounded-md hover:bg-white/10"><img src="${p.coverUrl}" class="w-12 h-12 rounded object-cover"><div><p class="font-semibold text-white">${p.name}</p><p class="text-sm text-gray-400">${p.artist}</p></div></a>`).join('')}</div></div></div>`;
+                container.innerHTML = `<div class="p-6 flex flex-col h-full app-entering"><a href="${nowPlaying.spotifyUrl}" target="_blank"><img src="${nowPlaying.coverUrl}" onerror="this.onerror=null;this.src='https://placehold.co/600x400/121212/ffffff?text=Cover'" class="w-full h-64 object-cover rounded-lg shadow-lg mb-4 cursor-pointer hover:scale-105 transition-transform duration-300"></a><div class="text-center"><h2 class="text-2xl font-bold">${nowPlaying.name}</h2><p class="text-md text-gray-400">${nowPlaying.artist}</p></div><div class="mt-4"><div class="h-1 bg-gray-700 rounded-full"><div class="h-1 bg-white rounded-full w-1/4"></div></div><div class="flex justify-between text-xs text-gray-400 mt-1"><span>0:58</span><span>${nowPlaying.duration}</span></div></div><div class="flex justify-center items-center gap-8 text-2xl my-4"><i id="spotify-prev" class="fas fa-backward-step text-gray-400 hover:text-white cursor-pointer"></i><div class="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center text-3xl cursor-pointer hover:scale-105 transition-transform"><i class="fas fa-pause"></i></div><i id="spotify-next" class="fas fa-forward-step text-gray-400 hover:text-white cursor-pointer"></i></div><div class="flex-grow overflow-y-auto mt-4 border-t border-gray-700/50 pt-4"><h3 class="font-bold mb-2 px-2">Todas as Playlists</h3><div class="space-y-2">${Config.spotifyPlaylists.map(p => `<a href="${p.spotifyUrl}" target="_blank" class="flex items-center gap-4 p-2 rounded-md hover:bg-white/10"><img src="${p.coverUrl}" onerror="this.onerror=null;this.src='https://placehold.co/100x100/121212/ffffff?text=Capa'" class="w-12 h-12 rounded object-cover"><div><p class="font-semibold text-white">${p.name}</p><p class="text-sm text-gray-400">${p.artist}</p></div></a>`).join('')}</div></div></div>`;
                 document.getElementById('spotify-prev').addEventListener('click', () => this.changeTrack(-1));
                 document.getElementById('spotify-next').addEventListener('click', () => this.changeTrack(1));
             }
         },
         Projects: { init() { const container = document.getElementById('projects-content'); if (!container) return; container.innerHTML = `<div class="p-4 flex h-full app-entering"><div class="w-full md:w-3/4 pr-4 overflow-y-auto">${Config.projects.map(p => `<div onclick="window.open('${p.demoLink}', '_blank')" class="mb-4 bg-gray-800/50 border border-gray-700 rounded-lg flex hover:border-purple-500 transition-colors cursor-pointer"><div class="flex flex-col items-center p-2 bg-black/20"><i class="fas fa-arrow-up cursor-pointer hover:text-orange-500"></i><span class="font-bold text-sm">${p.points}</span><i class="fas fa-arrow-down cursor-pointer hover:text-blue-500"></i></div><div class="p-4"><p class="text-xs text-gray-400">${p.community} • Postado por ${p.author}</p><h3 class="text-xl font-bold my-1">${p.title}</h3><p class="text-sm">${p.description}</p><div class="mt-3 flex gap-4 text-xs text-gray-400"><span class="hover:bg-gray-700 p-1 rounded cursor-pointer"><i class="fas fa-comment-alt mr-1"></i>${p.comments} Comentários</span><span class="hover:bg-gray-700 p-1 rounded cursor-pointer"><i class="fas fa-share mr-1"></i>Compartilhar</span></div></div></div>`).join('')}</div><div class="hidden md:block w-1/4 pl-4 border-l border-gray-700"><div class="bg-gray-800/50 p-4 rounded-lg"><h3 class="font-bold text-lg">Sobre a Comunidade</h3><p class="text-sm mt-2">Este é um portal para exibir os projetos mais recentes de Dokas, no estilo de um subreddit pessoal.</p></div></div></div>`; } },
-        AboutMe: { init() { const c = Config.aboutContent; const container = document.getElementById('about-content'); if (!container) return; container.innerHTML = `<div class="p-6 app-entering"><header class="flex items-center mb-6"><img src="${c.photoUrl}" class="w-24 h-24 md:w-36 md:h-36 rounded-full border-4 border-gray-700 object-cover"><div class="ml-6"><h2 class="text-2xl font-light">${c.username}</h2><div class="flex gap-4 mt-2"><button class="bg-blue-500 text-white font-bold py-1 px-4 rounded">Seguir</button><button class="bg-gray-700 font-bold py-1 px-4 rounded">Mensagem</button></div></div></header><div class="text-left"><p class="font-bold">${c.username}</p><p>${c.bio}</p></div><div class="flex justify-around text-center my-6 border-y border-gray-800 py-3"><div class="w-full"><span class="font-bold">${c.posts}</span><br><span class="text-gray-400">publicações</span></div><div class="w-full"><span class="font-bold">${c.followers}</span><br><span class="text-gray-400">seguidores</span></div><div class="w-full"><span class="font-bold">${c.following}</span><br><span class="text-gray-400">seguindo</span></div></div><div class="text-sm font-bold my-4">DESTAQUE</div><a href="${c.projectHighlight.demoLink}" target="_blank" class="flex flex-col items-center"><div class="w-20 h-20 rounded-full border-2 border-purple-500 p-1"><img src="${c.projectHighlight.image}" class="w-full h-full object-cover rounded-full"></div><p class="mt-2 text-sm">${c.projectHighlight.title}</p></a></div>`; } },
+        AboutMe: { init() { const c = Config.aboutContent; const container = document.getElementById('about-content'); if (!container) return; container.innerHTML = `<div class="p-6 app-entering"><header class="flex items-center mb-6"><img src="${c.photoUrl}" onerror="this.onerror=null;this.src='https://placehold.co/144x144/2c3e50/ffffff?text=Dokas'" class="w-24 h-24 md:w-36 md:h-36 rounded-full border-4 border-gray-700 object-cover"><div class="ml-6"><h2 class="text-2xl font-light">${c.username}</h2><div class="flex gap-4 mt-2"><button class="bg-blue-500 text-white font-bold py-1 px-4 rounded">Seguir</button><button class="bg-gray-700 font-bold py-1 px-4 rounded">Mensagem</button></div></div></header><div class="text-left"><p class="font-bold">${c.username}</p><p>${c.bio}</p></div><div class="flex justify-around text-center my-6 border-y border-gray-800 py-3"><div class="w-full"><span class="font-bold">${c.posts}</span><br><span class="text-gray-400">publicações</span></div><div class="w-full"><span class="font-bold">${c.followers}</span><br><span class="text-gray-400">seguidores</span></div><div class="w-full"><span class="font-bold">${c.following}</span><br><span class="text-gray-400">seguindo</span></div></div><div class="text-sm font-bold my-4">DESTAQUE</div><a href="${c.projectHighlight.demoLink}" target="_blank" class="flex flex-col items-center"><div class="w-20 h-20 rounded-full border-2 border-purple-500 p-1"><img src="${c.projectHighlight.image}" onerror="this.onerror=null;this.src='https://placehold.co/80x80/2c3e50/ffffff?text=Projeto'" class="w-full h-full object-cover rounded-full"></div><p class="mt-2 text-sm">${c.projectHighlight.title}</p></a></div>`; } },
         MyJourney: { 
             init() { this.render(1); },
             render(episodeId) {
                 const container = document.getElementById('journey-content'); if (!container) return;
                 const entry = Config.journeyEntries.find(e => e.id === episodeId) || Config.journeyEntries[0];
-                container.innerHTML = `<div class="h-full flex flex-col app-entering"><div class="h-3/5 bg-cover bg-center flex items-end p-8 shadow-inner relative" style="background-image: linear-gradient(to top, #000 60%, transparent), url('${entry.image}')"><div class="z-10 w-full md:w-2/3"><div class="flex items-center gap-2 text-lg mb-2"><i class="fas ${entry.icon} text-[var(--theme-accent)]"></i><span>S${entry.season}:E${entry.episode}</span></div><h1 class="text-5xl font-black mb-2">${entry.title}</h1><p class="text-gray-300">${entry.description}</p><button class="mt-4 bg-white text-black font-bold py-2 px-6 rounded hover:bg-gray-200"><i class="fas fa-play mr-2"></i>Assistir Episódio</button></div></div><div class="flex-grow p-8 overflow-y-auto"><h2 class="text-2xl font-bold mb-4">Episódios</h2><div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">${Config.journeyEntries.map(j => `<div class="cursor-pointer group episode-card" data-episode-id="${j.id}"><div class="aspect-video bg-gray-800 rounded-lg bg-cover bg-center overflow-hidden transform group-hover:scale-105 transition-transform relative"><img src="${j.image}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-play-circle text-4xl"></i></div></div><h4 class="font-bold mt-2">${j.title}</h4></div>`).join('')}</div></div></div>`;
+                container.innerHTML = `<div class="h-full flex flex-col app-entering"><div class="h-3/5 bg-cover bg-center flex items-end p-8 shadow-inner relative" style="background-image: linear-gradient(to top, #000 60%, transparent), url('${entry.image}')"><div class="z-10 w-full md:w-2/3"><div class="flex items-center gap-2 text-lg mb-2"><i class="fas ${entry.icon} text-[var(--theme-accent)]"></i><span>S${entry.season}:E${entry.episode}</span></div><h1 class="text-5xl font-black mb-2">${entry.title}</h1><p class="text-gray-300">${entry.description}</p><button class="mt-4 bg-white text-black font-bold py-2 px-6 rounded hover:bg-gray-200"><i class="fas fa-play mr-2"></i>Assistir Episódio</button></div></div><div class="flex-grow p-8 overflow-y-auto"><h2 class="text-2xl font-bold mb-4">Episódios</h2><div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">${Config.journeyEntries.map(j => `<div class="cursor-pointer group episode-card" data-episode-id="${j.id}"><div class="aspect-video bg-gray-800 rounded-lg bg-cover bg-center overflow-hidden transform group-hover:scale-105 transition-transform relative"><img src="${j.image}" onerror="this.onerror=null;this.src='https://placehold.co/320x180/1c1c1c/ffffff?text=Episódio'" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-play-circle text-4xl"></i></div></div><h4 class="font-bold mt-2">${j.title}</h4></div>`).join('')}</div></div></div>`;
                 document.querySelectorAll('.episode-card').forEach(card => card.addEventListener('click', () => this.render(Number(card.dataset.episodeId))));
             }
         },
         Hobbies: {
-            init() { const c = Config.aboutContent; const container = document.getElementById('hobbies-content'); if (!container) return; container.innerHTML = `<div class="flex flex-col md:flex-row h-full app-entering"><aside class="w-full md:w-1/3 p-6 border-r border-gray-700 flex-shrink-0 flex flex-col items-center text-center bg-gray-800"><img src="${c.photoUrl}" class="w-32 h-32 rounded-full mb-4 object-cover shadow-lg"><h2 class="text-2xl font-bold">Dokas</h2><p class="text-gray-400">Desenvolvedor & Criativo</p></aside><main class="flex-grow p-6 overflow-y-auto bg-gray-900"><div class="p-4 rounded-lg bg-black/20 border border-gray-700 mb-6"><h3 class="text-xl font-bold">Sobre</h3><p class="text-sm mt-2">${c.bio}</p></div><div class="p-4 rounded-lg bg-black/20 border border-gray-700"><h3 class="text-xl font-bold mb-4">Principais Competências</h3>${Config.hobbiesData.map(h => `<div class="flex items-center gap-4 mb-4"><i class="fas ${h.icon} fa-2x w-8 text-center text-[var(--theme-accent)]"></i><div><h4 class="font-bold">${h.name}</h4><p class="text-sm text-gray-400">${h.description}</p></div></div>`).join('')}</div></main></div>`; }
+            init() { const c = Config.aboutContent; const container = document.getElementById('hobbies-content'); if (!container) return; container.innerHTML = `<div class="flex flex-col md:flex-row h-full app-entering"><aside class="w-full md:w-1/3 p-6 border-r border-gray-700 flex-shrink-0 flex flex-col items-center text-center bg-gray-800"><img src="${c.photoUrl}" onerror="this.onerror=null;this.src='https://placehold.co/128x128/2c3e50/ffffff?text=Dokas'" class="w-32 h-32 rounded-full mb-4 object-cover shadow-lg"><h2 class="text-2xl font-bold">Dokas</h2><p class="text-gray-400">Desenvolvedor & Criativo</p></aside><main class="flex-grow p-6 overflow-y-auto bg-gray-900"><div class="p-4 rounded-lg bg-black/20 border border-gray-700 mb-6"><h3 class="text-xl font-bold">Sobre</h3><p class="text-sm mt-2">${c.bio}</p></div><div class="p-4 rounded-lg bg-black/20 border border-gray-700"><h3 class="text-xl font-bold mb-4">Principais Competências</h3>${Config.hobbiesData.map(h => `<div class="flex items-center gap-4 mb-4"><i class="fas ${h.icon} fa-2x w-8 text-center text-[var(--theme-accent)]"></i><div><h4 class="font-bold">${h.name}</h4><p class="text-sm text-gray-400">${h.description}</p></div></div>`).join('')}</div></main></div>`; }
         },
         Amigos: {
             init() { this.renderChat(); },
@@ -361,12 +405,35 @@
                 if (backButton) { backButton.addEventListener('click', () => document.getElementById('amigos-container').classList.remove('chat-view')); }
             }
         },
-        DokasAssistant: { init() { const container = document.getElementById('dokas-assistant-content'); if (container) container.innerHTML = `<div class="app-entering"><div class="text-6xl mb-4 animate-pulse">🔮</div><p class="text-lg">Bem-vindo ao DokasOS!</p><p class="text-sm mt-2 text-gray-400">Clique nos ícones para explorar.</p></div>`; } }
     };
 
     const DokasOS = {
-        init() { console.log("Iniciando DokasOS - Edição Prestige..."); this.setFavicon(); InteractiveWallpaper.init(); SoundManager.init(); WindowManager.init(); DesktopManager.init(); YouTubePlayerManager.init(); Terminal.init(); AppModules.init(); setTimeout(() => WindowManager.open('dokas-assistant-prompt-window'), 1000); console.log("DokasOS Pronto."); },
-        setFavicon() { const favicon = document.createElement('link'); favicon.rel = 'icon'; const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔮</text></svg>`; favicon.href = `data:image/svg+xml,${encodeURIComponent(svgIcon)}`; document.head.appendChild(favicon); }
+        init() {
+            console.log("Iniciando DokasOS - O Despertar do Pensador...");
+            this.setFavicon();
+            InteractiveWallpaper.init();
+            SoundManager.init();
+            WindowManager.init();
+            DesktopManager.init();
+            YouTubePlayerManager.init();
+            Terminal.init();
+            AppModules.init();
+            
+            this.handleStartupSequence();
+            console.log("DokasOS Pronto.");
+        },
+        handleStartupSequence() {
+            setTimeout(() => {
+                if (DOM.startupNotification) {
+                    DOM.startupNotification.style.opacity = '0';
+                    DOM.startupNotification.addEventListener('transitionend', () => {
+                        DOM.startupNotification.style.display = 'none';
+                    }, { once: true });
+                }
+                WindowManager.open('reflexoes-window');
+            }, 2500); // Wait 2.5 seconds before starting the fade out and opening the window
+        },
+        setFavicon() { const favicon = document.createElement('link'); favicon.rel = 'icon'; const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🦉</text></svg>`; favicon.href = `data:image/svg+xml,${encodeURIComponent(svgIcon)}`; document.head.appendChild(favicon); }
     };
 
     DokasOS.init();
