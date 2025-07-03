@@ -2,442 +2,717 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>DokasOS - O Despertar do Pensador</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PS2 Music Player Experience</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" xintegrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-    <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
         :root {
-            --theme-primary: #8e44ad; --theme-secondary: #2c3e50; --theme-accent: #1abc9c;   
-            --theme-accent-glow: #00ffc3; --theme-text-on-primary: #ecf0f1;
-            --theme-text-general: #bdc3c7; --theme-text-general-muted: #95a5a6;
-            --theme-window-bg: rgba(30, 41, 59, 0.8); --theme-window-border: rgba(26, 188, 156, 0.3);
-            --theme-window-header-bg-start: rgba(52, 73, 94, 0.85); --theme-window-header-bg-end: rgba(44, 62, 80, 0.95);
-            --theme-taskbar-bg: rgba(35, 45, 60, 0.85); --theme-taskbar-icon-color: #bdc3c7;
-            --theme-taskbar-icon-active-bg: rgba(26, 188, 156, 0.2); --theme-taskbar-icon-active-border: var(--theme-accent);
-            --theme-taskbar-icon-active-color: var(--theme-accent);
-            --theme-icon-dock-bg: rgba(44, 62, 80, 0.9); --theme-icon-dock-border: rgba(26, 188, 156, 0.4);
-            --theme-desktop-icon-bg-hover: rgba(62, 83, 104, 0.95); --theme-desktop-icon-color: #ecf0f1;
-            --font-main: 'Inter', sans-serif; --font-mono: 'VT323', monospace; --font-serif: 'EB Garamond', serif;
+            --ps2-bg: #5f5f6e;
+            --ps2-yellow: #ffff00;
+            --ps2-blue: #0096ff;
+            --ps2-white: #e0e0e0;
+            --ps2-dark-grey: #4a4a58;
         }
-        html { -webkit-tap-highlight-color: transparent; }
-        body { font-family: var(--font-main); overflow: hidden; background-color: #0d1117; color: var(--theme-text-general); height: 100vh; width: 100vw; margin: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-        #startup-notification { position: fixed; inset: 0; z-index: 9999; background: #0d1117; display: flex; align-items: center; justify-content: center; transition: opacity 1.5s ease-in-out; }
-        #interactive-bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
-        .desktop-bg { position: relative; height: 100vh; width: 100vw; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; box-sizing: border-box; }
-        .window {
-            position: absolute; min-width: 320px; min-height: 250px; resize: both; overflow: hidden;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--theme-window-border); background-color: var(--theme-window-bg);
-            backdrop-filter: blur(24px) saturate(180%); z-index: 100;
-            transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s ease, border-color 0.35s ease;
-            opacity: 0; transform: scale(0.95) translateY(20px); display: none; flex-direction: column; border-radius: 12px;
-        }
-        .window.active-border { border-color: var(--theme-accent); box-shadow: 0 0 35px -5px var(--theme-accent-glow), 0 0 15px -5px var(--theme-accent-glow), 0 25px 70px rgba(0,0,0,0.8); }
-        .window-header { cursor: grab; background: linear-gradient(180deg, var(--theme-window-header-bg-start), var(--theme-window-header-bg-end)); color: var(--theme-text-on-primary); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); border-bottom: 1px solid var(--theme-window-border); padding: 0.7rem 1rem; border-top-left-radius: 12px; border-top-right-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-        .window-header-button { background: rgba(255, 255, 255, 0.1); border: none; transition: background-color 0.2s, transform 0.1s; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
-        .window-header-button:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.1); } .window-header-button:active { transform: scale(0.95); } .window-header-button.close:hover { background-color: #e74c3c; } .window-header-button i { font-size: 0.65rem; }
-        .window-content { flex-grow: 1; overflow: auto; padding: 0; }
-        @keyframes app-intro { 0% { transform: translateY(30px) scale(0.95); opacity: 0; filter: blur(5px); } 100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0px); } }
-        .app-entering > * { animation: app-intro 0.6s 0.1s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-        #icon-dock { display: flex; gap: 16px; padding: 12px 20px; background-color: var(--theme-icon-dock-bg); backdrop-filter: blur(18px) saturate(160%); border-radius: 20px; box-shadow: 0 12px 35px rgba(0,0,0,0.5), inset 0 0 0 1.5px var(--theme-icon-dock-border); z-index: 150; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
-        .icon-item { width: 60px; height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--theme-desktop-icon-color); cursor: pointer; border-radius: 10px; background-color: transparent; transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), background-color 0.2s ease-out; user-select: none; }
-        .icon-item i { font-size: 2rem; margin-bottom: 0.3rem; transition: transform 0.3s ease; }
-        .icon-item:hover { transform: translateY(-8px); background-color: var(--theme-desktop-icon-bg-hover); } .icon-item:hover i { transform: scale(1.1); } .icon-item:active { transform: translateY(-4px) scale(0.95); }
-        #taskbar { position: fixed; top: 10px; right: 10px; width: auto; background-color: var(--theme-taskbar-bg); backdrop-filter: blur(15px) saturate(150%); z-index: 199; padding: 8px 12px; border-radius: 10px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4); display: flex; align-items: center; gap: 8px; }
-        .taskbar-icon, .taskbar-control { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; background-color: transparent; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; color: var(--theme-taskbar-icon-color); }
-        .taskbar-icon:hover, .taskbar-control:hover { background-color: rgba(255, 255, 255, 0.1); } .taskbar-icon.active { background-color: var(--theme-taskbar-icon-active-bg); border-color: var(--theme-taskbar-icon-active-border); color: var(--theme-taskbar-icon-active-color); }
-        #taskbar-clock { color: var(--theme-text-general-muted); font-size: 0.8rem; font-weight: 500; margin-left: 8px; }
-        #audio-popup { display: none; position: fixed; right: 10px; top: 60px; background-color: var(--theme-taskbar-bg); padding: 12px; border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.5); z-index: 198; }
-        #audio-visualizer-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 50px; pointer-events: none; opacity: 0.6; }
-        .terminal-output { background-color: rgba(13, 17, 23, 0.9); color: #2ecc71; font-family: var(--font-mono); font-size: 1.1rem; white-space: pre-wrap; overflow-y: auto; border-radius: 0; padding: 1rem; line-height: 1.6; flex-grow: 1; }
-        .terminal-input { background-color: transparent; color: #2ecc71; font-family: var(--font-mono); font-size: 1.1rem; border: none; outline: none; width: calc(100% - 1.5rem); padding: 0.5rem; margin-left: 0.5rem; }
-        
-        /* Estilos de Apps */
-        #spotify-content { background: linear-gradient(to top, #121212 50%, #1d2a38); }
-        #amigos-content { display: flex; } #journey-content { background: #000; }
-        #about-content { background: #121212; } #projects-content { background: #030303; }
-        #hobbies-content { background: #1D2226; color: var(--theme-text-on-primary); }
-        #reflexoes-content { background: #f5eeda; color: #3a3a3a; font-family: var(--font-serif); }
-        .philosophical-text { font-size: 1.15rem; line-height: 1.8; text-align: justify; }
-        .philosophical-text h1 { font-size: 2.2rem; text-align: center; margin-bottom: 2rem; font-weight: 500;}
-        .philosophical-text p { margin-bottom: 1.5rem; text-indent: 2em;}
 
-        @media (max-width: 767px) {
-            body { -webkit-text-size-adjust: 100%; }
-            .desktop-bg { justify-content: flex-start; }
-            .window { width: 100% !important; height: 100% !important; top: 0 !important; left: 0 !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; resize: none !important; transform: translateX(100%); opacity: 1; }
-            .window.open { transform: translateX(0%); }
-            .window-header { border-radius: 0; padding-top: calc(env(safe-area-inset-top, 0) + 0.7rem); padding-left: calc(env(safe-area-inset-left, 0) + 1rem); padding-right: calc(env(safe-area-inset-right, 0) + 1rem); }
-            #icon-dock { width: 90%; max-width: 500px; left: 50%; bottom: 20px; transform: translateX(-50%); padding: 8px; justify-content: space-around; overflow-x: auto; }
-            #icon-dock.hidden-mobile { transform: translateX(-50%) translateY(150%); }
-            #taskbar { display: none; } 
-            #amigos-content { flex-direction: column; }
-            #amigos-content > aside, #amigos-content > main { width: 100% !important; }
-            #amigos-content > main { display: none; }
-            #amigos-content.chat-view > aside { display: none; }
-            #amigos-content.chat-view > main { display: flex; }
-            #journey-content .h-3\/5 { height: 50%; } 
-            #journey-content h1 { font-size: 2.5rem; }
-            #projects-content > .flex { flex-direction: column; }
-            #projects-content aside { display: none; }
-            #projects-content .pr-4 { padding-right: 0; }
-            #reflexoes-content .p-8 { padding: 1.5rem; }
-            .philosophical-text { font-size: 1.1rem; line-height: 1.7; }
-            .philosophical-text h1 { font-size: 1.8rem; margin-bottom: 1.5rem; }
+        @keyframes spin-2d { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(20px); } }
+        @keyframes scanlines { 0% { background-position: 0 0; } 100% { background-position: 0 50px; } }
+        @keyframes cd-glare { 0% { transform: translateX(-150%) skewX(-30deg); } 100% { transform: translateX(150%) skewX(-30deg); } }
+        @keyframes jitter-subtle { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(0.2px, -0.2px); } 50% { transform: translate(-0.2px, 0.2px); } 75% { transform: translate(0.2px, 0.2px); } }
+        @keyframes background-pan { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        body { background-color: #111; font-family: 'VT323', monospace; color: var(--ps2-white); overflow: hidden; }
+
+        .crt-filter {
+            position: relative; width: 100vw; height: 100vh;
+            filter: blur(0.5px) contrast(1.1) saturate(1.2); animation: jitter-subtle 0.2s infinite;
         }
+        .crt-filter::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 3px, 3px 100%; z-index: 2; pointer-events: none; animation: scanlines 0.2s infinite linear;
+        }
+        .crt-filter::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.5); z-index: 2; pointer-events: none;
+        }
+        #noise-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJub2lzZSI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuOCIgbnVtT2N0YXZlcz0iNCIgc3RpdGNoVGlsZXM9InN0aXRjaCIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWx0ZXI9InVybCgjbm9pc2UpIiBvcGFjaXR5PSIwLjE1Ii8+PC9zdmc+');
+            pointer-events: none; z-index: 3;
+        }
+
+        .screen {
+            background-color: var(--ps2-bg); position: absolute; width: 100%; height: 100%; display: flex;
+            align-items: center; justify-content: center; transition: opacity 0.5s, visibility 0.5s, background-color 0.5s;
+            opacity: 0; visibility: hidden; text-shadow: 1px 1px 1px rgba(255,0,0,0.3), -1px -1px 1px rgba(0,0,255,0.3);
+        }
+        .screen.active { opacity: 1; visibility: visible; animation: fadeIn 0.5s ease-out; }
+        .screen.hiding { animation: fadeOut 0.5s ease-in; }
+
+        #selection-screen {
+            background-image: radial-gradient(circle, rgba(0, 50, 100, 0.3) 0%, transparent 70%), radial-gradient(circle, rgba(100, 0, 50, 0.2) 100%, transparent 70%);
+            animation: background-pan 40s infinite linear;
+        }
+        .cd-selection-item {
+            position: relative;
+            width: 180px; height: 180px;
+            cursor: pointer;
+        }
+        #selection-screen .cd-art {
+            width: 180px; height: 180px; border-radius: 50%; background-size: cover; background-position: center;
+            border: 5px solid #333; box-shadow: 0 10px 20px rgba(0,0,0,0.4); transition: transform 0.4s ease;
+        }
+        .cd-case {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://i.imgur.com/Q0Gg3E1.png') no-repeat center center;
+            background-size: contain;
+            opacity: 0; transition: opacity 0.3s ease;
+            transform: rotate(-10deg);
+        }
+        .cd-selection-item:hover .cd-case { opacity: 0.7; }
+        #selection-screen .cd-selection-item:hover .cd-art { transform: scale(1.05) translateX(10px); }
+
+        .player-container { width: 100%; max-width: 900px; margin: auto; position: relative; z-index: 5; transition: opacity 0.5s ease; }
+        .player-container.screensaver { opacity: 0; }
+        .cd-2d-container { width: 280px; height: 280px; }
+        .cd-2d {
+            width: 100%; height: 100%; border-radius: 50%; position: relative; background-size: cover; background-position: center;
+            box-shadow: 0 0 35px rgba(0,0,0,0.6); 
+            animation: spin-2d 15s linear infinite;
+            animation-play-state: paused;
+            transition: transform 0.5s ease-out;
+            overflow: hidden;
+        }
+        .cd-2d.playing { animation-play-state: running; }
+        .cd-2d::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 50%; height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+            animation: cd-glare 5s linear infinite;
+        }
+        .cd-hole {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 70px; height: 70px; border-radius: 50%; background-color: var(--ps2-bg);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
+        }
+        
+        .track-info { font-size: 1.5rem; line-height: 1.75rem; }
+        .track-number { color: var(--ps2-yellow); font-weight: bold; font-size: 2.25rem; }
+        .track-name { font-size: 1.875rem; min-height: 56px; }
+        .time-display { font-size: 1.5rem; }
+
+        .progress-bar-container { display: flex; gap: 2px; width: 100%; height: 20px; cursor: pointer; }
+        .progress-block { flex-grow: 1; background-color: var(--ps2-dark-grey); transition: background-color 0.3s ease-in-out; }
+        .progress-block.active { background-color: var(--ps2-blue); }
+
+        .controls svg { width: 28px; height: 28px; fill: var(--ps2-white); }
+        .controls .play-icon { fill: var(--ps2-blue); }
+        .controls button { background: none; border: none; padding: 4px; opacity: 0.8; transition: opacity 0.2s, color 0.2s; cursor: pointer; }
+        .controls button:hover { opacity: 1; }
+        .controls button.active { color: var(--ps2-yellow); }
+
+        .footer-prompts { font-size: 1.5rem; }
+        .ps2-logo { font-weight: bold; border: 2px solid var(--ps2-white); padding: 0 8px; }
+        
+        .popup {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background-color: rgba(40,40,60,0.95); border: 2px solid var(--ps2-blue);
+            max-height: 80%; width: 80%; max-width: 500px; z-index: 20;
+            backdrop-filter: blur(5px);
+        }
+        .tracklist-item:hover { background-color: var(--ps2-blue); }
+        .volume-slider { -webkit-appearance: none; background: var(--ps2-dark-grey); border-radius: 5px; }
+        .volume-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: var(--ps2-white); border-radius: 50%; cursor: pointer; }
+
+        #visualizer { width: 100%; height: 60px; }
+        
+        #special-bg-container, #saving-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; opacity: 0; transition: opacity 0.5s; pointer-events: none;
+        }
+        #special-bg-image { width: 100%; height: 100%; background-size: cover; background-position: center; }
+        #bg-youtube-player {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            min-width: 100%; min-height: 100%; width: auto; height: auto;
+        }
+        #saving-overlay { z-index: 30; display: flex; align-items: flex-start; justify-content: flex-end; padding: 2rem; }
+
     </style>
 </head>
 <body>
-    <div id="startup-notification">
-        <p class="text-white/70 text-lg font-serif italic">Uma reflexão para o momento...</p>
-    </div>
-    <canvas id="interactive-bg-canvas"></canvas>
-    <div id="desktop" class="desktop-bg">
-        <div id="icon-dock"></div>
-        <div id="audio-visualizer-container"><canvas id="audio-visualizer"></canvas></div>
-    </div>
-    <div id="youtube-player-container" style="position: absolute; top: -9999px; left: -9999px;"><div id="youtube-player"></div></div>
 
-    <!-- JANELAS COMPLETAS -->
-    <div id="reflexoes-window" class="window"><div class="window-header"><span><i class="fas fa-scroll mr-2"></i>Reflexões</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="reflexoes-content" class="window-content"></div></div>
-    <div id="spotify-window" class="window"><div class="window-header"><span><i class="fab fa-spotify mr-2"></i>Spotify</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="spotify-content" class="window-content"></div></div>
-    <div id="projects-window" class="window"><div class="window-header"><span><i class="fas fa-rocket mr-2"></i>Projetos</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="projects-content" class="window-content"></div></div>
-    <div id="about-window" class="window"><div class="window-header"><span><i class="fas fa-user-astronaut mr-2"></i>Perfil</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="about-content" class="window-content"></div></div>
-    <div id="my-journey-window" class="window"><div class="window-header"><span><i class="fas fa-film mr-2"></i>Jornada</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="journey-content" class="window-content"></div></div>
-    <div id="hobbies-window" class="window"><div class="window-header"><span><i class="fas fa-book-reader mr-2"></i>Skills</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="hobbies-content" class="window-content"></div></div>
-    <div id="amigos-window" class="window"><div class="window-header"><span><i class="fas fa-comments mr-2"></i>Chat</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div id="amigos-content" class="window-content"></div></div>
-    <div id="about-os-window" class="window"><div class="window-header"><span><i class="fab fa-galactic-republic mr-2"></i>Sobre DokasOS</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div class="window-content p-6"><div class="app-entering"><h2 class="text-2xl font-bold mb-2 text-center">DokasOS "O Despertar do Pensador"</h2><p class="text-center text-sm mb-3">Versão: <span id="os-version">7.1</span></p><hr class="border-[var(--theme-window-border)] my-4"><h3 class="text-lg font-semibold mb-2">Histórico de Versões:</h3><ul id="changelog-list" class="list-disc list-inside text-sm ml-4 mb-3 max-h-48 overflow-y-auto"></ul></div></div></div>
-    <div id="extras-window" class="window"><div class="window-header"><span><i class="fas fa-terminal mr-2"></i>Terminal</span><div class="flex space-x-2 window-controls"><button class="window-header-button close-button close"><i class="fas fa-times"></i></button></div></div><div class="window-content p-0 flex flex-col h-full bg-black/50"><div id="terminal-output" class="terminal-output"></div><div class="flex items-center p-2 border-t border-[rgba(255,255,255,0.1)]"><span class="text-[#2ecc71] font-bold">C:\></span><input type="text" id="terminal-input" class="terminal-input" autofocus></div></div></div>
-    <div id="taskbar"><div id="taskbar-weather" class="taskbar-control text-xs flex items-center gap-2"></div><div id="audio-control" class="taskbar-control"><i class="fas fa-volume-off"></i></div><div id="taskbar-clock"></div></div>
-    <div id="audio-popup"><input type="range" min="0" max="100" value="15" id="volume-slider"></div>
-    
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    <div class="crt-filter">
+        <div id="noise-overlay"></div>
+        <div id="special-bg-container">
+            <div id="special-bg-image"></div>
+            <div id="bg-youtube-player"></div>
+        </div>
+        
+        <div id="saving-overlay">
+             <div class="flex items-center gap-2 p-2 bg-black/50 rounded">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="var(--ps2-white)"><path d="M18 2h-8L4 8v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-6 6h-2V4h2v4zm3 0h-2V4h2v4zm3 0h-2V4h2v4z"/></svg>
+                <span>A guardar...</span>
+            </div>
+        </div>
 
-    const InteractiveWallpaper = {
-        canvas: document.getElementById('interactive-bg-canvas'), ctx: null, particles: [],
-        mouse: { x: null, y: null, radius: 150 },
-        init() { if (!this.canvas) return; this.ctx = this.canvas.getContext('2d'); this.handleResize(); window.addEventListener('resize', () => this.handleResize()); window.addEventListener('mousemove', e => { this.mouse.x = e.clientX; this.mouse.y = e.clientY; }); window.addEventListener('mouseout', () => { this.mouse.x = null; this.mouse.y = null; }); this.animate(); },
-        handleResize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; this.particles = []; let num = (this.canvas.width * this.canvas.height) / 9000; for (let i = 0; i < num; i++) this.createParticle(); },
-        createParticle() { this.particles.push({ x: Math.random() * this.canvas.width, y: Math.random() * this.canvas.height, dirX: (Math.random() * 0.4) - 0.2, dirY: (Math.random() * 0.4) - 0.2, size: Math.random() * 2 + 1 }); },
-        drawDokasText() { this.ctx.font = 'bold 15vw Inter, sans-serif'; this.ctx.fillStyle = 'rgba(255, 255, 255, 0.03)'; this.ctx.textAlign = 'center'; this.ctx.textBaseline = 'middle'; this.ctx.fillText('Dokas', this.canvas.width / 2, this.canvas.height / 2); },
-        animate() {
-            requestAnimationFrame(() => this.animate());
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); this.drawDokasText();
-            const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-accent').trim();
-            for (let i = 0; i < this.particles.length; i++) {
-                const p = this.particles[i]; p.x += p.dirX; p.y += p.dirY;
-                if (p.x < 0 || p.x > this.canvas.width) p.dirX *= -1; if (p.y < 0 || p.y > this.canvas.height) p.dirY *= -1;
-                this.ctx.beginPath(); this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); this.ctx.fillStyle = accentColor; this.ctx.fill();
-                let dxMouse = this.mouse.x - p.x; let dyMouse = this.mouse.y - p.y; let distMouse = Math.sqrt(dxMouse*dxMouse + dyMouse*dyMouse);
-                if (distMouse < this.mouse.radius) { this.ctx.beginPath(); this.ctx.strokeStyle = `rgba(26, 188, 156, ${1 - distMouse / this.mouse.radius})`; this.ctx.lineWidth = 0.5; this.ctx.moveTo(this.mouse.x, this.mouse.y); this.ctx.lineTo(p.x, p.y); this.ctx.stroke(); }
-                for (let j = i; j < this.particles.length; j++) {
-                    const p2 = this.particles[j]; let dist = Math.sqrt(Math.pow(p.x - p2.x, 2) + Math.pow(p.y - p2.y, 2));
-                    if (dist < 100) { this.ctx.beginPath(); this.ctx.strokeStyle = `rgba(26, 188, 156, ${1 - dist / 100})`; this.ctx.lineWidth = 0.3; this.ctx.moveTo(p.x, p.y); this.ctx.lineTo(p2.x, p2.y); this.ctx.stroke(); }
-                }
-            }
-        }
-    };
+        <!-- Screen 1: CD Selection -->
+        <div id="selection-screen" class="screen active">
+            <div class="text-center">
+                <h1 class="text-5xl text-white mb-12" style="text-shadow: 2px 2px 0 var(--ps2-blue);">Select Disc</h1>
+                <div id="cd-selection-container" class="flex flex-wrap justify-center gap-8"></div>
+            </div>
+        </div>
+        
+        <!-- Screen 2: Loading Screen -->
+        <div id="loading-screen" class="screen">
+            <h1 class="text-3xl">Reading Disc...</h1>
+        </div>
 
-    const Config = {
-        localStorageKeys: { windowStates: 'dokasOsWindowStates_v20', volume: 'dokasOsVolume_v15'},
-        ytPlayer: { videoId: 'qcj9E4Egyng', initialVolume: 15 },
-        iconData: [
-            { id: 'reflexoes-icon', windowId: 'reflexoes-window', faClass: 'fas fa-scroll', text: 'Reflexões' },
-            { id: 'about-icon', windowId: 'about-window', faClass: 'fas fa-user-astronaut', text: 'Perfil' }, { id: 'projects-icon', windowId: 'projects-window', faClass: 'fas fa-rocket', text: 'Projetos' },
-            { id: 'my-journey-icon', windowId: 'my-journey-window', faClass: 'fas fa-film', text: 'Jornada'}, { id: 'hobbies-icon', windowId: 'hobbies-window', faClass: 'fas fa-book-reader', text: 'Skills'},
-            { id: 'amigos-icon', windowId: 'amigos-window', faClass: 'fas fa-comments', text: 'Amigos'}, { id: 'spotify-icon', windowId: 'spotify-window', faClass: 'fab fa-spotify', text: 'Música' },
-            { id: 'extras-icon', windowId: 'extras-window', faClass: 'fas fa-terminal', text: 'Terminal' },
-        ],
-        changelogEntries: [ "v7.1: Adicionado título e música à reflexão, e uma notificação de inicialização.", "v7.0 'O Despertar do Pensador': Adicionado app de Reflexões filosóficas.", "v6.0 'Edição Final': Lançamento com compatibilidade mobile total e refinamentos finais.", "v5.2 'Jornada Reescrita': Narrativa e visuais da Jornada aprimorados.", "v5.1 'Refinamento Prestige': Feedback incorporado.", "v5.0 'Edição Prestige': Redesign completo dos apps.", "v4.0 'A Sublimação Estética': Redesign inicial.", "v3.0 'A Restauração Completa': Funcionalidade restaurada.", "v2.0 'O Despertar da Consciência': UI remodelada.", "v1.0 'O Nascimento da Tragédia': Lançamento." ],
-        spotifyPlaylists: [{ name: "Chega de Derrotas 🎧", coverUrl: "https://i.pinimg.com/736x/01/85/0a/01850a3a912785833ccf73d07678cae6.jpg", spotifyUrl: "https://open.spotify.com/playlist/0hWOBR1EcHqx2tBkfFn4MS", artist: "Dokas", duration: "3:45" }, { name: "Até a Validação 💻", coverUrl: "https://i.pinimg.com/736x/d4/be/45/d4be45b1ff5e8c4ab33ab95daa12addd.jpg", spotifyUrl: "https://open.spotify.com/playlist/1qysrUbhbrMhIPEEda15rd", artist: "Dokas", duration: "4:20" }, { name: "Work, Times Up 📻", coverUrl: "https://i.pinimg.com/736x/aa/8c/cb/aa8ccbfc49fef2699aeb979bf4bb2d7f.jpg", spotifyUrl: "https://open.spotify.com/playlist/3nIIIw2hFU9fvqTjZHf8Lg", artist: "Dokas", duration: "2:55" }, ],
-        projects: [{ id: 1, title: "Site de reflexões", community: "r/SideProject", author: "u/dokas", points: 1337, comments: 42, description: "Um site que serve de anotações, totalmente feito no localstorage...", imageUrl: "https://i.pinimg.com/736x/0e/2c/ad/0e2cad9b359cae21c8655b155f9351d6.jpg", demoLink: "https://holy-southern-bridge.glitch.me/" }],
-        aboutContent: { photoUrl: "https://i.pinimg.com/736x/fe/ca/df/fecadf4ed575f1ed39260f532619d77d.jpg", username: "dokas.dev", posts: 6, followers: 404, following: 8, bio: `Sou Dokas, um cara qualquer das interwebis que acredita na filosofia do seguinte pressuposto, "se tudo der errado, pelo menos posso fazer piadas disso".`, projectHighlight: { title: "Site de Anotações", image: "https://i.pinimg.com/736x/0e/2c/ad/0e2cad9b359cae21c8655b155f9351d6.jpg", demoLink: "https://holy-southern-bridge.glitch.me/" } },
-        journeyEntries: [
-            { id: 1, season: 1, episode: 1, title: "2007", description: "Assim nasceu João, uma pessoa destinada a navegar as complexidades do mundo digital. O início foi silencioso, um prelúdio para uma jornada de autodescoberta e criação, ainda sem a persona que o definiria.", image: "https://i.pinimg.com/736x/29/3d/73/293d73b02884cbc643e2862e931c2a92.jpg", icon: "fa-seedling" }, 
-            { id: 2, season: 1, episode: 2, title: "Começo da Jornada", description: "O som de um modem discado foi o portal para um universo paralelo. O primeiro contato com a internet não foi apenas sobre descobrir sites, mas sobre encontrar uma nova forma de se expressar e se conectar, dando início a uma fascinação duradoura pela tecnologia.", image: "https://i.pinimg.com/736x/64/d6/97/64d697d8b7e82d6bc0e64afb61de14da.jpg", icon: "fa-wifi" }, 
-            { id: 3, season: 2, episode: 1, title: "Filho Pródigo", description: "Após explorar diversos caminhos, houve um retorno inevitável à sua vocação original: a criação. A edição de vídeos e o entusiasmo genuíno em ajudar pessoas com seus próprios projetos reacenderam a centelha. A família, especialmente os ensinamentos de avó e mãe, foi o alicerce que o manteve de pé, garantindo que na vida, por mais difícil que fosse, sempre era possível dar um nó e seguir em frente.", image: "https://i.pinimg.com/736x/f8/fa/38/f8fa3869b173393cde734226573099d3.jpg", icon: "fa-film" }, 
-            { id: 4, season: 2, episode: 2, title: "Evolução em Massa", description: "A paixão pela criação transcendeu as ferramentas visuais. As linhas de código tornaram-se o novo pincel. A automação em Python e a arquitetura de sistemas complexos representaram um salto quântico, uma evolução da expressão criativa para a lógica e a função.", image: "https://i.pinimg.com/736x/1b/d8/38/1bd838c7669dbb652d03ec21d0dc9573.jpg", icon: "fa-brain" },
-            { id: 5, season: 2, episode: 3, title: "Aprendendo com os Erros", description: "Surgiu o alter ego 'Doquinha', que evoluiu para 'Dokas'. Uma persona criada para navegar os espaços online, mas que, com o tempo, tomou atitudes que levaram ao arrependimento. Este capítulo foi um confronto com o próprio ego e o início de um profundo desapego por esse nome.", image: "https://i.pinimg.com/736x/b4/ed/22/b4ed22b713ca63ccff4906a38ea6ba36.jpg", icon: "fa-mask" },
-            { id: 6, season: 3, episode: 1, title: "Aprendizado", description: "O ponto de virada. A decisão de abandonar a persona 'Dokas' e voltar à realidade. Cada erro, cada 'murro', serviu como uma lição valiosa. A vida voltou ao normal, mas transformada, com um foco renovado em ajudar quem está por perto e crescer com cada experiência.", image: "https://i.pinimg.com/736x/87/67/6e/87676eafc8ea3d3fbd34780918d404a7.jpg", icon: "fa-hand-holding-heart" },
-            { id: 7, season: 3, episode: 2, title: "Continuação do Roteirista", description: "A narrativa está longe de terminar. Cada novo dia é uma cena, cada projeto um arco. O futuro permanece um roteiro aberto, com o café como combustível para as longas noites de escrita, garantindo que a história continue a ser contada.", image: "https://i.pinimg.com/736x/ec/93/2d/ec932dd42c0693e28b482c018a6a094d.jpg", icon: "fa-pen-fancy" }
-        ],
-        hobbiesData: [{ icon: 'fa-music', name: 'Música', description: 'Gosto muito de Yun Li, Kanye West e Eminem, artistas favoritos.' }, { icon: 'fa-gamepad', name: 'Games', description: 'Jogo muito Dead by Daylight (DBD) e outros jogos por aí.' }, { icon: 'fa-code', name: 'Programação', description: 'Gosto muito de automação em Python e diversas outras criações.' }, { icon: 'fa-book-reader', name: 'Leitura', description: 'Curto alguns livros e já li alguns, como "O Mundo de Sofia" e outros por aí.' }, { icon: 'fa-brain', name: 'Aprender Coisas Novas', description: 'Gosto de aprender, cada queda o pai usa de mochila a jato para subir.' }, { icon: 'fa-comments', name: 'Conversas Aleatórias', description: 'Sou um rapaz aleatório demais, só que na minha. Sou difícil de comunicação, não manjo dos papos.'} ],
-        amigosData: [
-            { id: 1, nome: "Vx", status: "DBD", avatar: "https://placehold.co/100x100/2ecc71/ffffff?text=V" }, 
-            { id: 2, nome: "Felipe", status: "Breaking bad>>>>BCS", avatar: "https://placehold.co/100x100/3498db/ffffff?text=F" }, 
-            { id: 3, nome: "Gustavo", status: "I Am Kanye west", avatar: "https://placehold.co/100x100/f1c40f/ffffff?text=G"},
-            { id: 4, nome: "Falecido Gaviota", status: "Em memória (Luto)", avatar: "https://placehold.co/100x100/95a5a6/ffffff?text=G" },
-            { id: 5, nome: "Cleiton", status: "Bola pra toda obra", avatar: "https://placehold.co/100x100/e67e22/ffffff?text=C" },
-            { id: 6, nome: "Heitor", status: "sem tempo", avatar: "https://placehold.co/100x100/e74c3c/ffffff?text=H" },
-            { id: 7, nome: "Dave", status: "Quem nasceu para ser Oh Shit, nunca será Very Good!", avatar: "https://placehold.co/100x100/9b59b6/ffffff?text=D" },
-            { id: 8, nome: "Arthur", status: "vagabundo", avatar: "https://placehold.co/100x100/34495e/ffffff?text=A" },
-            { id: 9, nome: "Mizuna Poggers", status: "Desaparecida (Saudades!)", avatar: "https://placehold.co/100x100/1abc9c/ffffff?text=M" }
-        ],
-        terminalCommands: {},
-    };
-
-    const AppState = { activeWindow: null, zIndexCounter: 100, openWindows: {}, windowStates: JSON.parse(localStorage.getItem(Config.localStorageKeys.windowStates)) || {}, isAudioPlaying: false, ytPlayer: null, spotifyCurrentIndex: 0 };
-    const DOM = {
-        allWindows: document.querySelectorAll('.window'), taskbar: document.getElementById('taskbar'),
-        iconDock: document.getElementById('icon-dock'),
-        terminalOutput: document.getElementById('terminal-output'), terminalInput: document.getElementById('terminal-input'),
-        audioControl: document.getElementById('audio-control'), audioPopup: document.getElementById('audio-popup'),
-        volumeSlider: document.getElementById('volume-slider'), audioVisualizerCanvas: document.getElementById('audio-visualizer'),
-        startupNotification: document.getElementById('startup-notification'),
-    };
-    if (DOM.audioVisualizerCanvas) DOM.visualizerCtx = DOM.audioVisualizerCanvas.getContext('2d');
-
-    const Utils = {
-        typeTextEffect(target, text, speed = 15, callback) {
-            let i = 0;
-            const currentHTML = target.innerHTML;
-            target.innerHTML = currentHTML + '\n';
-            function type() {
-                if (i < text.length) {
-                    target.innerHTML += text.charAt(i).replace(/\n/g, '<br>');
-                    i++;
-                    target.scrollTop = target.scrollHeight;
-                    setTimeout(type, speed);
-                } else if (callback) {
-                    callback();
-                }
-            }
-            type();
-        },
-    };
-
-    const SoundManager = {
-        sounds: {}, isReady: false,
-        init() {
-            const startAudio = () => {
-                if(this.isReady) return;
-                Tone.start().then(() => { this.loadSounds(); this.isReady = true; console.log("Contexto de Áudio pronto."); }).catch(e => console.error("Erro ao iniciar Tone.js:", e));
-                document.body.removeEventListener('click', startAudio, { once: true });
-            };
-            document.body.addEventListener('click', startAudio, { once: true });
-        },
-        loadSounds() {
-            this.sounds.open = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
-            this.sounds.close = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0, release: 0.3 } }).toDestination();
-            this.sounds.click = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 4, envelope: { attack: 0.001, decay: 0.1, sustain: 0 } }).toDestination();
-            this.sounds.error = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.02, decay: 0.3, sustain: 0, release: 0.1 } }).toDestination();
-            this.sounds.change = new Tone.Synth({ oscillator: { type: 'fatsawtooth', count: 3, spread: 20 }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.2, release: 0.1 } }).toDestination();
-        },
-        play(sound, note = 'C4', duration = '8n') { if (this.isReady && this.sounds[sound]) this.sounds[sound].triggerAttackRelease(note, duration); }
-    };
-    
-    const WindowManager = {
-        init() { DOM.allWindows.forEach(win => this.setupWindowControls(win)); document.body.addEventListener('mousedown', e => { if (e.target.closest('.window')) this.bringToFront(e.target.closest('.window')); }); },
-        setupWindowControls(win) { const header = win.querySelector('.window-header'); const closeBtn = win.querySelector('.close-button'); if (header) this.makeWindowDraggable(win, header); if (closeBtn) closeBtn.addEventListener('click', e => { e.stopPropagation(); this.close(win); }); },
-        open(windowId) {
-            const win = document.getElementById(windowId); if (!win) return;
-            const defaultSizes = {
-                'about-window': { width: '800px', height: '650px' }, 'projects-window': { width: '850px', height: '600px' },
-                'spotify-window': { width: '420px', height: '600px' }, 'extras-window': { width: '680px', height: '450px' },
-                'my-journey-window': { width: '850px', height: '650px' },
-                'hobbies-window': { width: '650px', height: '580px' }, 'amigos-window': { width: '800px', height: '600px' },
-                'about-os-window': { width: '480px', height: '440px' },
-                'reflexoes-window': { width: '700px', height: '600px' },
-            };
-            const isMobile = window.innerWidth <= 767; const savedState = AppState.windowStates[windowId];
-            if (!isMobile) {
-                const size = defaultSizes[windowId] || { width: '50vw', height: '60vh' };
-                win.style.width = savedState?.width || size.width; win.style.height = savedState?.height || size.height;
-                if (savedState?.top && savedState?.left) { win.style.top = savedState.top; win.style.left = savedState.left; } 
-                else { 
-                    const heightInt = parseInt(win.style.height, 10);
-                    const widthInt = parseInt(win.style.width, 10);
-                    win.style.top = `calc(50% - ${heightInt/2}px)`; 
-                    win.style.left = `calc(50% - ${widthInt/2}px + ${Math.random()*100-50}px)`; 
-                }
-            }
-            win.style.display = 'flex'; this.bringToFront(win);
-            const appContent = win.querySelector('.window-content');
-            if(appContent.firstElementChild) {
-                appContent.firstElementChild.classList.remove('app-entering');
-                void appContent.firstElementChild.offsetWidth; 
-                appContent.firstElementChild.classList.add('app-entering');
-            }
-            requestAnimationFrame(() => { win.classList.add('open'); if (!isMobile) { win.style.opacity = '1'; win.style.transform = 'scale(1) translateY(0px)'; } });
-            if (!AppState.openWindows[windowId]) DesktopManager.createTaskbarIcon(win);
-            DesktopManager.updateTaskbarActiveState(windowId); SoundManager.play('open', 'C5', '16n');
-            if (isMobile) DOM.iconDock.classList.add('hidden-mobile');
-        },
-        close(win) {
-            this.saveState(win); const isMobile = window.innerWidth <= 767; win.classList.remove('open');
-            if (!isMobile) { win.style.opacity = '0'; win.style.transform = 'scale(0.95) translateY(20px)'; }
-            SoundManager.play('close', 'F3', '16n');
-            setTimeout(() => {
-                win.style.display = 'none'; const windowId = win.id; if (AppState.openWindows[windowId]?.taskbarIcon) AppState.openWindows[windowId].taskbarIcon.remove();
-                delete AppState.openWindows[windowId]; if (AppState.activeWindow?.id === windowId) { AppState.activeWindow = null; DesktopManager.updateTaskbarActiveState(null); }
-                if (isMobile && Object.keys(AppState.openWindows).length === 0) {
-                    DOM.iconDock.classList.remove('hidden-mobile');
-                }
-            }, 350);
-        },
-        bringToFront(win) { if (AppState.activeWindow?.id === win.id) return; AppState.zIndexCounter++; win.style.zIndex = AppState.zIndexCounter; DOM.allWindows.forEach(w => w.classList.remove('active-border')); win.classList.add('active-border'); AppState.activeWindow = win; DesktopManager.updateTaskbarActiveState(win.id); },
-        saveState(win) { if (!win?.id || window.innerWidth <= 767) return; AppState.windowStates[win.id] = { width: win.style.width, height: win.style.height, top: win.style.top, left: win.style.left }; localStorage.setItem(Config.localStorageKeys.windowStates, JSON.stringify(AppState.windowStates)); },
-        makeWindowDraggable(win, header) {
-            let isDragging = false, offsetX, offsetY;
-            const onMove = (x, y) => { if (isDragging) { win.style.left = `${x - offsetX}px`; win.style.top = `${y - offsetY}px`; }};
-            const onEndDrag = () => { if (isDragging) { isDragging = false; header.style.cursor = 'grab'; this.saveState(win); document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onEndDrag);}};
-            const onMouseMove = e => onMove(e.clientX, e.clientY);
-            header.addEventListener('mousedown', e => { if (e.target.closest('.window-header-button') || window.innerWidth <= 767) return; isDragging = true; offsetX = e.clientX - win.getBoundingClientRect().left; offsetY = e.clientY - win.getBoundingClientRect().top; header.style.cursor = 'grabbing'; this.bringToFront(win); document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onEndDrag); });
-        },
-    };
-    const DesktopManager = {
-        init() { this.populateIconDock(); this.initClock(); this.initWeather(); this.initAudioControls(); },
-        populateIconDock() { DOM.iconDock.innerHTML = Config.iconData.map(data => `<div class="icon-item" id="${data.id}" data-window="${data.windowId}" title="${data.text}"><i class="${data.faClass}"></i></div>`).join(''); document.querySelectorAll('.icon-item').forEach(icon => icon.addEventListener('click', () => { SoundManager.play('click', 'G5', '32n'); WindowManager.open(icon.dataset.window); })); },
-        createTaskbarIcon(win) { const windowId = win.id; const iconClass = win.querySelector('.window-header i')?.className || 'fas fa-window-maximize'; const taskbarIcon = document.createElement('div'); taskbarIcon.className = 'taskbar-icon'; taskbarIcon.dataset.windowId = windowId; taskbarIcon.innerHTML = `<i class="${iconClass}"></i>`; taskbarIcon.addEventListener('click', () => { (win.style.display === 'none' || win.style.opacity === '0') ? WindowManager.open(windowId) : WindowManager.bringToFront(win); }); if (DOM.taskbar) DOM.taskbar.insertBefore(taskbarIcon, DOM.taskbar.firstChild); AppState.openWindows[windowId] = { element: win, taskbarIcon }; },
-        updateTaskbarActiveState(activeId) { if(DOM.taskbar) document.querySelectorAll('.taskbar-icon').forEach(icon => icon.classList.toggle('active', icon.dataset.windowId === activeId)); },
-        initClock() { const update = () => { if (DOM.taskbar && DOM.taskbarClock) DOM.taskbarClock.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }; setInterval(update, 1000); update(); },
-        initWeather() { const el = document.getElementById('taskbar-weather'); if (el) { const temp = 18 + Math.floor(Math.random() * 8); el.innerHTML = `<i class="fas fa-cloud-sun"></i><span>${temp}°C</span>`; } },
-        initAudioControls() { if(DOM.audioControl) DOM.audioControl.addEventListener('click', (e) => { e.stopPropagation(); DOM.audioPopup.style.display = DOM.audioPopup.style.display === 'flex' ? 'none' : 'flex'; }); if(DOM.volumeSlider) DOM.volumeSlider.addEventListener('input', e => YouTubePlayerManager.setVolume(Number(e.target.value))); document.addEventListener('click', e => { if (DOM.audioControl && !DOM.audioControl.contains(e.target) && DOM.audioPopup && !DOM.audioPopup.contains(e.target)) DOM.audioPopup.style.display = 'none'; }); }
-    };
-    const YouTubePlayerManager = {
-        init() { if (window.YT && window.YT.Player) this.onYouTubeIframeAPIReady(); else window.onYouTubeIframeAPIReady = this.onYouTubeIframeAPIReady.bind(this); },
-        onYouTubeIframeAPIReady() { AppState.ytPlayer = new YT.Player('youtube-player', { height: '0', width: '0', videoId: Config.ytPlayer.videoId, playerVars: { 'autoplay': 1, 'controls': 0, 'loop': 1, 'playlist': Config.ytPlayer.videoId }, events: { 'onReady': this.onPlayerReady.bind(this), 'onStateChange': this.onPlayerStateChange.bind(this) } }); },
-        onPlayerReady(event) { const savedVolume = localStorage.getItem(Config.localStorageKeys.volume) || Config.ytPlayer.initialVolume; this.setVolume(Number(savedVolume)); if(DOM.volumeSlider) DOM.volumeSlider.value = savedVolume; event.target.playVideo(); },
-        onPlayerStateChange(event) { AppState.isAudioPlaying = (event.data === YT.PlayerState.PLAYING); if(DOM.audioControl) DOM.audioControl.innerHTML = `<i class="fas ${AppState.isAudioPlaying ? 'fa-volume-high' : 'fa-volume-off'}"></i>`; if (AppState.isAudioPlaying) AudioVisualizer.start(); else AudioVisualizer.stop(); },
-        setVolume(level) { if (AppState.ytPlayer) AppState.ytPlayer.setVolume(level); localStorage.setItem(Config.localStorageKeys.volume, level); if(DOM.audioControl) DOM.audioControl.innerHTML = `<i class="fas ${level > 50 ? 'fa-volume-high' : level > 0 ? 'fa-volume-low' : 'fa-volume-off'}"></i>`; }
-    };
-    const AudioVisualizer = {
-        animationId: null,
-        start() { if (!this.animationId && DOM.visualizerCtx) this.draw(); },
-        stop() { if (this.animationId) { cancelAnimationFrame(this.animationId); this.animationId = null; } if (DOM.visualizerCtx) DOM.visualizerCtx.clearRect(0, 0, DOM.audioVisualizerCanvas.width, DOM.audioVisualizerCanvas.height); },
-        draw() {
-            if (!AppState.isAudioPlaying) { this.stop(); return; }
-            const ctx = DOM.visualizerCtx; const canvas = DOM.audioVisualizerCanvas; const numBars = 16;
-            ctx.clearRect(0, 0, canvas.width, canvas.height); const barWidth = canvas.width / numBars;
-            for (let i = 0; i < numBars; i++) { const barHeight = Math.random() * canvas.height * 0.8 + canvas.height * 0.1; ctx.fillStyle = `rgba(26, 188, 156, ${0.3 + Math.random()*0.4})`; ctx.fillRect(i * barWidth, canvas.height - barHeight, barWidth - 2, barHeight); }
-            this.animationId = requestAnimationFrame(this.draw.bind(this));
-        }
-    };
-    const Terminal = {
-        init() { this.populateCommands(); DOM.terminalOutput.innerHTML = "Bem-vindo ao Terminal DokasOS! Digite 'help'."; DOM.terminalInput.addEventListener('keydown', e => this.handleInput(e)); },
-        populateCommands() {
-            Config.terminalCommands = {
-                help: () => this.printOutput(`Comandos: 'about', 'projects', 'contact', 'clear', 'dokasos', 'date', 'calc', 'fortune', 'neofetch'`), about: () => WindowManager.open('about-window'), projects: () => WindowManager.open('projects-window'),
-                contact: () => this.printOutput('Discord: Dokquin'), clear: () => { DOM.terminalOutput.innerHTML = ''; },
-                dokasos: () => WindowManager.open('about-os-window'), date: () => this.printOutput(new Date().toLocaleString('pt-BR')),
-                calc: (args) => { if (!args.length) return this.printOutput('Uso: calc <expressão>'); try { this.printOutput(`Resultado: ${eval(args.join('').replace(/[^-()\d/*+.]/g, ''))}`); } catch (e) { this.printOutput(`Erro na expressão.`); } },
-                fortune: () => this.printOutput(["Seu código compilará de primeira.", "A sorte favorece a mente preparada."][Math.floor(Math.random()*2)]),
-                neofetch: () => { const uptime = Math.floor(performance.now() / 60000); const art = `\n<span style="color: var(--theme-accent);">dokas</span>@<span style="color: var(--theme-primary);">dokasos</span>\n---------\n<span style="color: var(--theme-accent);">OS</span>: DokasOS O Despertar do Pensador\n<span style="color: var(--theme-accent);">Uptime</span>: ${uptime} mins\n<span style="color: var(--theme-accent);">Resolution</span>: ${window.innerWidth}x${window.innerHeight}\n<span style="color: var(--theme-accent);">Terminal</span>: dokas-shell`; DOM.terminalOutput.innerHTML += art.replace(/\n/g, '<br>'); this.addPrompt(); }
-            };
-        },
-        handleInput(e) { if (e.key === 'Enter' && DOM.terminalInput.value) { const input = DOM.terminalInput.value.trim(); DOM.terminalOutput.innerHTML += `\n<span class="text-cyan-400">C:\\></span> ${input}`; DOM.terminalInput.value = ''; const [cmd, ...args] = input.toLowerCase().split(' '); const action = Config.terminalCommands[cmd]; if (action) action(args); else this.printOutput(`Comando '${cmd}' não reconhecido.`); } },
-        printOutput(text) { SoundManager.play('click', 'A5', '64n'); Utils.typeTextEffect(DOM.terminalOutput, text, 10, () => this.addPrompt()); },
-        addPrompt() { DOM.terminalOutput.scrollTop = DOM.terminalOutput.scrollHeight; }
-    };
-    
-    const AppModules = {
-        init() { Object.values(this).forEach(mod => mod.init && mod.init()); },
-        AboutOS: { init() { const list = document.getElementById('changelog-list'); if (list) list.innerHTML = Config.changelogEntries.map(e => `<li>${e}</li>`).join(''); } },
-        Reflexoes: {
-            init() {
-                const container = document.getElementById('reflexoes-content');
-                if (!container) return;
-                const philosophyText = `
-                    <div class="p-8 md:p-12 app-entering">
-                        <div class="philosophical-text">
-                            <h1>O Intervalo Entre o Piscar de Olhos</h1>
-                            <p>Nasci. Pisquei os olhos e vi meus pais sorrindo. Em outro piscar, tudo mudou — vi a separação deles, vi meu pai cruzando a porta, indo embora. Só o reencontrei quatro anos depois. Entre uma piscada e outra, o mundo já não era o mesmo.</p>
-                            <p>Lembro de piscar e, de repente, estar no primeiro ano da escola, cercado de carteiras e incertezas, tentando entender onde eu me encaixava. Pisquei de novo e fui arrastado pela professora até meu lugar — talvez não por maldade, mas porque ela, como tantos outros, não sabia como lidar comigo. Outro piscar, e eu estava em pé, sem cadeira. Tinha derrubado a minha por descuido, e a professora entendeu como rebeldia. Naquele momento, foi como se o mundo estivesse dizendo que não havia espaço pra mim.</p>
-                            <p>Continuei piscando. Bati a cabeça — literalmente. Lembro da dor ao acertar a mesa da professora, empurrado por uma dinâmica cruel: uma perna na frente, um empurrão por trás. Duas pessoas me derrubando, uma fisicamente, outra emocionalmente. Pisquei e conheci meu padrasto. Não gostei dele. Pisquei de novo e ele já não estava mais ali. O que restou foi o peso da culpa, por não tê-lo compreendido, por talvez não ter dado tempo de gostar. A vida se movia rápido demais — entre chegadas e partidas, quase não havia tempo para entender o que se sentia.</p>
-                            <p>Pisquei, e a adolescência chegou. Cheia de promessas que pareciam vagas, perguntas sem respostas e uma confusão que não avisava antes de chegar. Agora, ao piscar mais uma vez, percebo que estou às portas da vida adulta — aquela fase que sempre pareceu tão distante e definitiva, mas que agora entendo como apenas mais um passo no meio de tantos outros.</p>
-                            <p>No meio de tantas piscadas, às vezes sinto que me perdi. Não sei quando exatamente — só sei que em algum momento, entre o antes e o depois, algo em mim se desencontrou. O tempo passou. E muita coisa mudou — fora de mim e, principalmente, dentro.</p>
-                            <p>Hoje, já não acredito em um único propósito esperando por nós no fim da estrada, como se a vida fosse uma missão com um destino final claro. O que vejo são fragmentos: momentos, escolhas, dores, descobertas. Pequenos propósitos que nascem e morrem no cotidiano, e que muitas vezes a gente esquece de viver de verdade.</p>
-                            <p>Talvez o sentido da vida esteja justamente aí: no intervalo entre um piscar e outro. Nos detalhes que a pressa apaga, nas pessoas que nos atravessam, nas memórias que insistem em ficar mesmo quando tudo já passou. É nesses pequenos espaços — silenciosos, rápidos, invisíveis — que, sem perceber, a gente vai se tornando quem é.</p>
+        <!-- Screen 3: Music Player -->
+        <div id="player-screen" class="screen">
+            <div id="clock" class="absolute top-4 right-4 text-2xl"></div>
+            <div class="player-container p-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div class="flex flex-col items-center gap-4">
+                        <div class="cd-2d-container">
+                            <div id="cd-2d" class="cd-2d"><div class="cd-hole"></div></div>
                         </div>
-                    </div>`;
-                container.innerHTML = philosophyText;
-            }
-        },
-        Spotify: { 
-            init() { this.render(); },
-            changeTrack(direction) {
-                const len = Config.spotifyPlaylists.length;
-                AppState.spotifyCurrentIndex = (AppState.spotifyCurrentIndex + direction + len) % len;
-                SoundManager.play('change', 'A4', '16n'); this.render();
+                        <canvas id="visualizer"></canvas>
+                        <div class="flex gap-4 text-sm">
+                            <div class="ps2-logo">PS2 Sound System</div>
+                            <div class="ps2-logo" style="color: var(--ps2-yellow); border-color: var(--ps2-yellow);">Digital Audio</div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col justify-between h-full">
+                        <div class="track-info text-center md:text-left space-y-2">
+                            <div id="album-info" class="flex items-center gap-2 mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="var(--ps2-white)"><path d="M18 2h-8L4 8v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-6 6h-2V4h2v4zm3 0h-2V4h2v4zm3 0h-2V4h2v4z"/></svg>
+                                <span id="album-title" class="text-lg"></span>
+                            </div>
+                            <h2 id="track-number" class="track-number">Track 01</h2>
+                            <p id="track-name" class="track-name">Loading...</p>
+                            <div id="progress-bar-container" class="progress-bar-container"></div>
+                            <p id="time-display" class="time-display">00:00 / 00:00</p>
+                            
+                            <div class="controls flex items-center justify-center md:justify-start space-x-1">
+                                <button id="rewind-btn" title="Rewind 10s"><svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm-2-6l6-4.5v9l-6-4.5z"/></svg></button>
+                                <button id="prev-btn" title="Previous Track"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+                                <button id="play-btn" title="Play"><svg class="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+                                <button id="pause-btn" title="Pause" class="hidden"><svg class="play-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></button>
+                                <button id="stop-btn" title="Stop"><svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg></button>
+                                <button id="next-btn" title="Next Track"><svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zm-3.5 6l-8.5 6V6z"/></svg></button>
+                                <button id="forward-btn" title="Forward 10s"><svg viewBox="0 0 24 24"><path d="M13 6v12l8.5-6-8.5-6zm-2 6l-6 4.5v-9l6 4.5z"/></svg></button>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-center md:justify-start gap-4 mt-4">
+                             <button id="tracklist-btn" class="text-lg border-2 border-transparent hover:border-white px-2">Track List</button>
+                             <button id="shuffle-btn" class="text-lg border-2 border-white px-2">Shuffle</button>
+                             <button id="repeat-btn" class="text-lg border-2 border-white px-2">Repeat All</button>
+                             <button id="viz-btn" class="text-lg border-2 border-white px-2">Viz: Bars</button>
+                             <input id="volume-slider" type="range" min="0" max="100" value="100" class="volume-slider w-24">
+                        </div>
+                    </div>
+                </div>
+                <div id="back-btn" class="footer-prompts flex justify-center md:justify-end space-x-8 mt-4 cursor-pointer">
+                    <div><span class="prompt-icon" style="color: #ff4444; border-color: #ff4444;">O</span> Back</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="youtube-player" class="absolute -left-full top-0"></div>
+    <div id="tracklist-popup" class="popup p-4 hidden">
+        <h3 id="tracklist-title" class="text-2xl text-center mb-4 text-yellow-300"></h3>
+        <ul id="tracklist-ul" class="overflow-y-auto max-h-64 text-lg"></ul>
+        <button id="close-tracklist-btn" class="absolute top-2 right-2 text-2xl">X</button>
+    </div>
+    <div id="info-popup" class="popup p-4 hidden text-lg">
+        <h3 class="text-2xl text-center mb-4 text-yellow-300">System Information</h3>
+        <ul>
+            <li><span class="text-yellow-300">Console:</span> PS2 Music Player v1.0</li>
+            <li><span class="text-yellow-300">BIOS:</span> Ver. 3.14 (P)</li>
+            <li><span class="text-yellow-300">CD-ROM:</span> v2.71</li>
+            <li><span class="text-yellow-300">Memory Card (1):</span> 1.5MB Free</li>
+        </ul>
+        <button id="close-info-btn" class="absolute top-2 right-2 text-2xl">X</button>
+    </div>
+
+    <script>
+        const albums = [
+            {
+                name: "Sucesso FM",
+                coverUrl: "https://i1.sndcdn.com/artworks-zMJy5oUhjfM05LnK-AzuGwA-t500x500.jpg",
+                theme: { bg: "rgba(0, 80, 150, 0.2)", primary: 'var(--ps2-blue)', secondary: 'var(--ps2-yellow)', visualizer: 'rgba(0, 150, 255, 0.7)' },
+                tracks: [
+                    { videoId: 'tkl_smLRtcE', title: "Sucesso FM" }, { videoId: 'gTsZ-vQLq74', title: "Rumo a Vitória" },
+                    { videoId: 'fGhkeEmMDSU', title: "Goddamn" }, { videoId: 'pKyoxG2ZDh8', title: "I Walk" },
+                    { videoId: '-1WfKz06Hgc', title: "Waiting to Fly" }, { videoId: 'llJZ4H4zQ2k', title: "Sonhar" },
+                    { videoId: 'TQ2OtyCtOMc', title: "I'm in Love" }, { videoId: 'u3M_KURTWKY', title: "For my Family" },
+                    { videoId: 'm8SzrWpCjKU', title: "Going Home" }, { videoId: 'rfIV2uGZ2kM', title: "The Lord and Me" },
+                    { videoId: 'ozu12D-DdJk', title: "Anjos da Guarda" }, { videoId: 'HjA6fwTInT0', title: "We Gold" },
+                ]
             },
-            render() {
-                const container = document.getElementById('spotify-content'); if (!container) return;
-                const nowPlaying = Config.spotifyPlaylists[AppState.spotifyCurrentIndex];
-                container.innerHTML = `<div class="p-6 flex flex-col h-full app-entering"><a href="${nowPlaying.spotifyUrl}" target="_blank"><img src="${nowPlaying.coverUrl}" onerror="this.onerror=null;this.src='https://placehold.co/600x400/121212/ffffff?text=Cover'" class="w-full h-64 object-cover rounded-lg shadow-lg mb-4 cursor-pointer hover:scale-105 transition-transform duration-300"></a><div class="text-center"><h2 class="text-2xl font-bold">${nowPlaying.name}</h2><p class="text-md text-gray-400">${nowPlaying.artist}</p></div><div class="mt-4"><div class="h-1 bg-gray-700 rounded-full"><div class="h-1 bg-white rounded-full w-1/4"></div></div><div class="flex justify-between text-xs text-gray-400 mt-1"><span>0:58</span><span>${nowPlaying.duration}</span></div></div><div class="flex justify-center items-center gap-8 text-2xl my-4"><i id="spotify-prev" class="fas fa-backward-step text-gray-400 hover:text-white cursor-pointer"></i><div class="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center text-3xl cursor-pointer hover:scale-105 transition-transform"><i class="fas fa-pause"></i></div><i id="spotify-next" class="fas fa-forward-step text-gray-400 hover:text-white cursor-pointer"></i></div><div class="flex-grow overflow-y-auto mt-4 border-t border-gray-700/50 pt-4"><h3 class="font-bold mb-2 px-2">Todas as Playlists</h3><div class="space-y-2">${Config.spotifyPlaylists.map(p => `<a href="${p.spotifyUrl}" target="_blank" class="flex items-center gap-4 p-2 rounded-md hover:bg-white/10"><img src="${p.coverUrl}" onerror="this.onerror=null;this.src='https://placehold.co/100x100/121212/ffffff?text=Capa'" class="w-12 h-12 rounded object-cover"><div><p class="font-semibold text-white">${p.name}</p><p class="text-sm text-gray-400">${p.artist}</p></div></a>`).join('')}</div></div></div>`;
-                document.getElementById('spotify-prev').addEventListener('click', () => this.changeTrack(-1));
-                document.getElementById('spotify-next').addEventListener('click', () => this.changeTrack(1));
+            {
+                name: "Bittersweet Memories",
+                coverUrl: "https://i.scdn.co/image/ab67616d0000b2732e8e4cfa666ea534d070c041",
+                theme: { bg: "rgba(255, 140, 0, 0.2)", primary: 'darkorange', secondary: 'gold', visualizer: 'darkorange' },
+                tracks: [
+                    { videoId: 'xXeDMfisrU8', title: "Saúde" }, { videoId: 'rsxeE1WkHqw', title: "Filho Pródigo" },
+                    { videoId: 'KzUUemEW_iI', title: "Let It Pour" }, { videoId: 'qkaxqSGI_OE', title: "The Story" },
+                    { videoId: 'fnRyVCxqLqk', title: "Back Home" }, { videoId: 'RMeJND0yzeM', title: "Melhor Não" },
+                    { videoId: 'yApMEdYtkGM', title: "Old School" }, { videoId: 'ZBe3GmoFJys', title: "Dirty Dancing" },
+                    { videoId: 'g0_DLkqjylU', title: "Prefiro Morrer" },
+                    { videoId: 'vLQR5UCq5J0', title: "Quase Perfeito" }, { videoId: 'Z7LsJA7NJF0', title: "Máquina do Tempo", videoBg: 'Z7LsJA7NJF0' },
+                    { videoId: 'tR-m63k2nNM', title: "Flores de Outro Carnaval" },
+                ]
+            },
+            {
+                name: "Bons Tempos",
+                coverUrl: "https://akamai.sscdn.co/uploadfile/letras/albuns/3/0/9/c/2338071724245865.jpg",
+                theme: { bg: "rgba(0, 0, 139, 0.2)", primary: '#aaccff', secondary: '#f0f0c0', visualizer: '#aaccff' },
+                tracks: [
+                    { videoId: 'XUYNTXXhmbc', title: "Quando a Noite Vem" }, { videoId: 'wwVejlwrKTA', title: "Oxford Shoes" },
+                    { videoId: 'R3BWRueflA4', title: "Twist" }, { videoId: '61o4MC3kEsM', title: "American Dream" },
+                    { videoId: 'MUqryi1MIrs', title: "A Cidade Sem Você" }, { videoId: 'amC0UxaMz9Y', title: "Um Certo Alguém" },
+                    { videoId: 'slgXDu2Ck2A', title: "Playback" }, { videoId: 'wVmcDQ_yX5g', title: "Amiga Fiel" },
+                    { videoId: 'yqRAcdaqLNI', title: "Televisão" }, { videoId: 'y1v-bI4_k2I', title: "Raise My Hands" },
+                ]
             }
-        },
-        Projects: { init() { const container = document.getElementById('projects-content'); if (!container) return; container.innerHTML = `<div class="p-4 flex h-full app-entering"><div class="w-full md:w-3/4 pr-4 overflow-y-auto">${Config.projects.map(p => `<div onclick="window.open('${p.demoLink}', '_blank')" class="mb-4 bg-gray-800/50 border border-gray-700 rounded-lg flex hover:border-purple-500 transition-colors cursor-pointer"><div class="flex flex-col items-center p-2 bg-black/20"><i class="fas fa-arrow-up cursor-pointer hover:text-orange-500"></i><span class="font-bold text-sm">${p.points}</span><i class="fas fa-arrow-down cursor-pointer hover:text-blue-500"></i></div><div class="p-4"><p class="text-xs text-gray-400">${p.community} • Postado por ${p.author}</p><h3 class="text-xl font-bold my-1">${p.title}</h3><p class="text-sm">${p.description}</p><div class="mt-3 flex gap-4 text-xs text-gray-400"><span class="hover:bg-gray-700 p-1 rounded cursor-pointer"><i class="fas fa-comment-alt mr-1"></i>${p.comments} Comentários</span><span class="hover:bg-gray-700 p-1 rounded cursor-pointer"><i class="fas fa-share mr-1"></i>Compartilhar</span></div></div></div>`).join('')}</div><div class="hidden md:block w-1/4 pl-4 border-l border-gray-700"><div class="bg-gray-800/50 p-4 rounded-lg"><h3 class="font-bold text-lg">Sobre a Comunidade</h3><p class="text-sm mt-2">Este é um portal para exibir os projetos mais recentes de Dokas, no estilo de um subreddit pessoal.</p></div></div></div>`; } },
-        AboutMe: { init() { const c = Config.aboutContent; const container = document.getElementById('about-content'); if (!container) return; container.innerHTML = `<div class="p-6 app-entering"><header class="flex items-center mb-6"><img src="${c.photoUrl}" onerror="this.onerror=null;this.src='https://placehold.co/144x144/2c3e50/ffffff?text=Dokas'" class="w-24 h-24 md:w-36 md:h-36 rounded-full border-4 border-gray-700 object-cover"><div class="ml-6"><h2 class="text-2xl font-light">${c.username}</h2><div class="flex gap-4 mt-2"><button class="bg-blue-500 text-white font-bold py-1 px-4 rounded">Seguir</button><button class="bg-gray-700 font-bold py-1 px-4 rounded">Mensagem</button></div></div></header><div class="text-left"><p class="font-bold">${c.username}</p><p>${c.bio}</p></div><div class="flex justify-around text-center my-6 border-y border-gray-800 py-3"><div class="w-full"><span class="font-bold">${c.posts}</span><br><span class="text-gray-400">publicações</span></div><div class="w-full"><span class="font-bold">${c.followers}</span><br><span class="text-gray-400">seguidores</span></div><div class="w-full"><span class="font-bold">${c.following}</span><br><span class="text-gray-400">seguindo</span></div></div><div class="text-sm font-bold my-4">DESTAQUE</div><a href="${c.projectHighlight.demoLink}" target="_blank" class="flex flex-col items-center"><div class="w-20 h-20 rounded-full border-2 border-purple-500 p-1"><img src="${c.projectHighlight.image}" onerror="this.onerror=null;this.src='https://placehold.co/80x80/2c3e50/ffffff?text=Projeto'" class="w-full h-full object-cover rounded-full"></div><p class="mt-2 text-sm">${c.projectHighlight.title}</p></a></div>`; } },
-        MyJourney: { 
-            init() { this.render(1); },
-            render(episodeId) {
-                const container = document.getElementById('journey-content'); if (!container) return;
-                const entry = Config.journeyEntries.find(e => e.id === episodeId) || Config.journeyEntries[0];
-                container.innerHTML = `<div class="h-full flex flex-col app-entering"><div class="h-3/5 bg-cover bg-center flex items-end p-8 shadow-inner relative" style="background-image: linear-gradient(to top, #000 60%, transparent), url('${entry.image}')"><div class="z-10 w-full md:w-2/3"><div class="flex items-center gap-2 text-lg mb-2"><i class="fas ${entry.icon} text-[var(--theme-accent)]"></i><span>S${entry.season}:E${entry.episode}</span></div><h1 class="text-5xl font-black mb-2">${entry.title}</h1><p class="text-gray-300">${entry.description}</p><button class="mt-4 bg-white text-black font-bold py-2 px-6 rounded hover:bg-gray-200"><i class="fas fa-play mr-2"></i>Assistir Episódio</button></div></div><div class="flex-grow p-8 overflow-y-auto"><h2 class="text-2xl font-bold mb-4">Episódios</h2><div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">${Config.journeyEntries.map(j => `<div class="cursor-pointer group episode-card" data-episode-id="${j.id}"><div class="aspect-video bg-gray-800 rounded-lg bg-cover bg-center overflow-hidden transform group-hover:scale-105 transition-transform relative"><img src="${j.image}" onerror="this.onerror=null;this.src='https://placehold.co/320x180/1c1c1c/ffffff?text=Episódio'" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-play-circle text-4xl"></i></div></div><h4 class="font-bold mt-2">${j.title}</h4></div>`).join('')}</div></div></div>`;
-                document.querySelectorAll('.episode-card').forEach(card => card.addEventListener('click', () => this.render(Number(card.dataset.episodeId))));
-            }
-        },
-        Hobbies: {
-            init() { const c = Config.aboutContent; const container = document.getElementById('hobbies-content'); if (!container) return; container.innerHTML = `<div class="flex flex-col md:flex-row h-full app-entering"><aside class="w-full md:w-1/3 p-6 border-r border-gray-700 flex-shrink-0 flex flex-col items-center text-center bg-gray-800"><img src="${c.photoUrl}" onerror="this.onerror=null;this.src='https://placehold.co/128x128/2c3e50/ffffff?text=Dokas'" class="w-32 h-32 rounded-full mb-4 object-cover shadow-lg"><h2 class="text-2xl font-bold">Dokas</h2><p class="text-gray-400">Desenvolvedor & Criativo</p></aside><main class="flex-grow p-6 overflow-y-auto bg-gray-900"><div class="p-4 rounded-lg bg-black/20 border border-gray-700 mb-6"><h3 class="text-xl font-bold">Sobre</h3><p class="text-sm mt-2">${c.bio}</p></div><div class="p-4 rounded-lg bg-black/20 border border-gray-700"><h3 class="text-xl font-bold mb-4">Principais Competências</h3>${Config.hobbiesData.map(h => `<div class="flex items-center gap-4 mb-4"><i class="fas ${h.icon} fa-2x w-8 text-center text-[var(--theme-accent)]"></i><div><h4 class="font-bold">${h.name}</h4><p class="text-sm text-gray-400">${h.description}</p></div></div>`).join('')}</div></main></div>`; }
-        },
-        Amigos: {
-            init() { this.renderChat(); },
-            renderChat(activeId = 1) {
-                const container = document.getElementById('amigos-content'); if (!container) return;
-                const activeFriend = Config.amigosData.find(f => f.id === activeId) || Config.amigosData[0];
-                container.innerHTML = `<div class="w-full h-full flex app-entering" id="amigos-container"><aside class="w-full md:w-1/3 bg-black/20 border-r border-gray-700/50 flex flex-col"><div class="p-3 border-b border-gray-700/50"><input type="text" placeholder="Pesquisar..." class="w-full bg-gray-800/50 rounded-full py-1 px-3 text-sm outline-none"></div><div class="flex-grow overflow-y-auto">${Config.amigosData.map(a => `<div class="flex items-center gap-3 p-3 cursor-pointer ${a.id === activeId ? 'bg-white/10' : 'hover:bg-white/5'} border-b border-gray-800/50" data-friend-id="${a.id}"><img src="${a.avatar}" class="w-12 h-12 rounded-full object-cover"><div><h4 class="font-bold">${a.nome}</h4><p class="text-sm text-gray-400 truncate">${a.status}</p></div></div>`).join('')}</div></aside><main class="w-full md:w-2/3 flex-col bg-gray-800/30 hidden md:flex"><header class="flex items-center p-3 border-b border-gray-700/50 bg-black/40 backdrop-blur-sm"> <button class="mr-2 md:hidden" id="back-to-chat-list"><i class="fas fa-arrow-left"></i></button> <img src="${activeFriend.avatar}" class="w-10 h-10 rounded-full object-cover mr-3"><div><h3 class="font-bold">${activeFriend.nome}</h3><p class="text-xs text-gray-300">${activeFriend.id === 1 ? 'Online' : 'Offline'}</p></div></header><div class="flex-grow p-4 overflow-y-auto space-y-4 backdrop-blur-[2px]"><div class="flex justify-end"><div class="bg-purple-600 p-2 rounded-lg max-w-xs shadow">${activeFriend.status}</div></div></div><footer class="p-3 flex items-center gap-2 bg-black/40 backdrop-blur-sm"><i class="fas fa-smile text-gray-300 text-xl cursor-pointer"></i><input type="text" placeholder="Digite uma mensagem" class="flex-grow bg-gray-700/50 rounded-full py-2 px-4 outline-none"><i class="fas fa-microphone text-gray-300 text-xl cursor-pointer"></i></footer></main></div>`;
-                document.querySelectorAll('[data-friend-id]').forEach(el => el.addEventListener('click', () => {
-                    this.renderChat(Number(el.dataset.friendId));
-                    if (window.innerWidth <= 767) { document.getElementById('amigos-container').classList.add('chat-view'); }
-                }));
-                const backButton = document.getElementById('back-to-chat-list');
-                if (backButton) { backButton.addEventListener('click', () => document.getElementById('amigos-container').classList.remove('chat-view')); }
-            }
-        },
-    };
+        ];
+        
+        const dom = {
+            selectionScreen: document.getElementById('selection-screen'),
+            loadingScreen: document.getElementById('loading-screen'),
+            playerScreen: document.getElementById('player-screen'),
+            cdSelectionContainer: document.getElementById('cd-selection-container'),
+            cd2d: document.getElementById('cd-2d'),
+            playBtn: document.getElementById('play-btn'),
+            pauseBtn: document.getElementById('pause-btn'),
+            stopBtn: document.getElementById('stop-btn'),
+            nextBtn: document.getElementById('next-btn'),
+            prevBtn: document.getElementById('prev-btn'),
+            backBtn: document.getElementById('back-btn'),
+            rewindBtn: document.getElementById('rewind-btn'),
+            forwardBtn: document.getElementById('forward-btn'),
+            shuffleBtn: document.getElementById('shuffle-btn'),
+            repeatBtn: document.getElementById('repeat-btn'),
+            vizBtn: document.getElementById('viz-btn'),
+            albumTitle: document.getElementById('album-title'),
+            trackNumber: document.getElementById('track-number'),
+            trackName: document.getElementById('track-name'),
+            timeDisplay: document.getElementById('time-display'),
+            progressBarContainer: document.getElementById('progress-bar-container'),
+            volumeSlider: document.getElementById('volume-slider'),
+            tracklistBtn: document.getElementById('tracklist-btn'),
+            tracklistPopup: document.getElementById('tracklist-popup'),
+            tracklistTitle: document.getElementById('tracklist-title'),
+            tracklistUl: document.getElementById('tracklist-ul'),
+            closeTracklistBtn: document.getElementById('close-tracklist-btn'),
+            infoBtn: document.createElement('button'), // To be added
+            infoPopup: document.getElementById('info-popup'),
+            closeInfoBtn: document.getElementById('close-info-btn'),
+            visualizer: document.getElementById('visualizer'),
+            specialBgContainer: document.getElementById('special-bg-container'),
+            specialBgImage: document.getElementById('special-bg-image'),
+            savingOverlay: document.getElementById('saving-overlay'),
+            clock: document.getElementById('clock'),
+        };
 
-    const DokasOS = {
-        init() {
-            console.log("Iniciando DokasOS - O Despertar do Pensador...");
-            this.setFavicon();
-            InteractiveWallpaper.init();
-            SoundManager.init();
-            WindowManager.init();
-            DesktopManager.init();
-            YouTubePlayerManager.init();
-            Terminal.init();
-            AppModules.init();
+        const state = {
+            currentAlbumIndex: 0,
+            currentTrackIndex: 0,
+            ytPlayer: null,
+            bgPlayer: null,
+            progressInterval: null,
+            isApiLoaded: false,
+            isPlayerReady: false,
+            hasPlayedStartup: false,
+            currentVisualizerColor: 'rgba(0, 150, 255, 0.7)',
+            isShuffle: false,
+            repeatMode: 'all', // 'none', 'one', 'all'
+            visualizerMode: 'bars', // 'bars', 'wave', 'circle'
+            clockInterval: null,
+            screensaverTimeout: null,
+            uiSfx: null,
+        };
+
+        function loadYouTubeAPI() {
+            if (state.isApiLoaded) return;
+            state.isApiLoaded = true;
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            document.head.appendChild(tag);
+        }
+
+        function onYouTubeIframeAPIReady() {
+            state.ytPlayer = new YT.Player('youtube-player', {
+                height: '1', width: '1',
+                playerVars: { 'controls': 0, 'fs': 0, 'iv_load_policy': 3, 'modestbranding': 1 },
+                events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
+            });
+            state.bgPlayer = new YT.Player('bg-youtube-player', {
+                height: '100%', width: '100%',
+                playerVars: { 'controls': 0, 'fs': 0, 'iv_load_policy': 3, 'modestbranding': 1, 'autoplay': 1, 'loop': 1 },
+                events: { 'onReady': (e) => e.target.mute() }
+            });
+        }
+        
+        function onPlayerStateChange(event) {
+            const isPlaying = event.data === YT.PlayerState.PLAYING;
+            updateUIIsPlaying(isPlaying);
+            if (isPlaying) startProgressUpdater(); else stopProgressUpdater();
+            if (event.data === YT.PlayerState.ENDED) playNextTrack();
+        }
+
+        function renderSelectionScreen() {
+            dom.cdSelectionContainer.innerHTML = '';
+            albums.forEach((album, index) => {
+                const item = document.createElement('div');
+                item.className = 'cd-selection-item';
+                item.innerHTML = `<div class="cd-case"></div><div class="cd-art" style="background-image: url('${album.coverUrl}')"></div>`;
+                item.onclick = () => selectAlbum(index);
+                dom.cdSelectionContainer.appendChild(item);
+            });
+        }
+
+        function selectAlbum(index) {
+            state.currentAlbumIndex = index;
+            state.currentTrackIndex = 0;
             
-            this.handleStartupSequence();
-            console.log("DokasOS Pronto.");
-        },
-        handleStartupSequence() {
-            setTimeout(() => {
-                if (DOM.startupNotification) {
-                    DOM.startupNotification.style.opacity = '0';
-                    DOM.startupNotification.addEventListener('transitionend', () => {
-                        DOM.startupNotification.style.display = 'none';
-                    }, { once: true });
-                }
-                WindowManager.open('reflexoes-window');
-            }, 2500); // Wait 2.5 seconds before starting the fade out and opening the window
-        },
-        setFavicon() { const favicon = document.createElement('link'); favicon.rel = 'icon'; const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🦉</text></svg>`; favicon.href = `data:image/svg+xml,${encodeURIComponent(svgIcon)}`; document.head.appendChild(favicon); }
-    };
+            transitionToScreen(dom.loadingScreen);
+            
+            if (!state.hasPlayedStartup) {
+                playStartupSound();
+                state.hasPlayedStartup = true;
+            }
 
-    DokasOS.init();
-});
-</script>
+            setTimeout(() => {
+                if (!state.isApiLoaded) loadYouTubeAPI();
+                else if (!state.ytPlayer) onYouTubeIframeAPIReady();
+                else loadTrack(state.currentTrackIndex, true);
+                transitionToScreen(dom.playerScreen);
+            }, 2500);
+        }
+
+        function onPlayerReady(event) {
+            state.isPlayerReady = true;
+            state.ytPlayer.setVolume(dom.volumeSlider.value);
+            loadTrack(state.currentTrackIndex, true);
+        }
+        
+        function returnToSelection() {
+            stopMusic();
+            resetTheme();
+            transitionToScreen(dom.selectionScreen);
+        }
+
+        function transitionToScreen(targetScreen) {
+            const currentScreen = document.querySelector('.screen.active');
+            if (currentScreen) {
+                currentScreen.classList.add('hiding');
+                currentScreen.classList.remove('active');
+            }
+            setTimeout(() => {
+                if(currentScreen) currentScreen.classList.remove('hiding');
+                targetScreen.classList.add('active');
+                if(targetScreen === dom.playerScreen) startClock();
+                else stopClock();
+            }, 500);
+        }
+
+        function loadTrack(index, autoplay = false) {
+            if (!state.isPlayerReady) return;
+            const album = albums[state.currentAlbumIndex];
+            if (index < 0 || index >= album.tracks.length) return;
+            const track = album.tracks[index];
+            state.currentTrackIndex = index;
+            applyTheme(album.theme);
+            updateTrackInfo(album, track, index + 1);
+            handleSpecialBackground(track);
+            if (autoplay) state.ytPlayer.loadVideoById(track.videoId); else state.ytPlayer.cueVideoById(track.videoId);
+        }
+
+        function playMusic() { if (state.ytPlayer) state.ytPlayer.playVideo(); }
+        function pauseMusic() { if (state.ytPlayer) state.ytPlayer.pauseVideo(); }
+        function stopMusic() {
+            if (state.ytPlayer && typeof state.ytPlayer.stopVideo === 'function') state.ytPlayer.stopVideo();
+            updateUIIsPlaying(false);
+        }
+        function playNextTrack() {
+            if (state.repeatMode === 'one') {
+                loadTrack(state.currentTrackIndex, true);
+                return;
+            }
+            if (state.isShuffle) {
+                let nextIndex;
+                do {
+                    nextIndex = Math.floor(Math.random() * albums[state.currentAlbumIndex].tracks.length);
+                } while (albums[state.currentAlbumIndex].tracks.length > 1 && nextIndex === state.currentTrackIndex);
+                loadTrack(nextIndex, true);
+                return;
+            }
+            const isLastTrack = state.currentTrackIndex === albums[state.currentAlbumIndex].tracks.length - 1;
+            if (isLastTrack && state.repeatMode === 'none') {
+                stopMusic();
+                return;
+            }
+            const nextTrackIndex = (state.currentTrackIndex + 1) % albums[state.currentAlbumIndex].tracks.length;
+            loadTrack(nextTrackIndex, true);
+        }
+        function playPrevTrack() { loadTrack((state.currentTrackIndex - 1 + albums[state.currentAlbumIndex].tracks.length) % albums[state.currentAlbumIndex].tracks.length, true); }
+        
+        function seek(seconds) {
+            if (!state.ytPlayer || typeof state.ytPlayer.getCurrentTime !== 'function') return;
+            const newTime = state.ytPlayer.getCurrentTime() + seconds;
+            state.ytPlayer.seekTo(newTime, true);
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.style.setProperty('--ps2-blue', theme.primary || '#0096ff');
+            document.documentElement.style.setProperty('--ps2-yellow', theme.secondary || '#ffff00');
+            dom.playerScreen.style.backgroundColor = theme.bg || 'var(--ps2-bg)';
+            state.currentVisualizerColor = theme.visualizer || 'rgba(0, 150, 255, 0.7)';
+        }
+
+        function resetTheme() {
+            document.documentElement.style.setProperty('--ps2-blue', '#0096ff');
+            document.documentElement.style.setProperty('--ps2-yellow', '#ffff00');
+            dom.playerScreen.style.backgroundColor = 'var(--ps2-bg)';
+            state.currentVisualizerColor = 'rgba(0, 150, 255, 0.7)';
+        }
+
+        function handleSpecialBackground(track) {
+            dom.specialBgImage.style.backgroundImage = 'none';
+            if (state.bgPlayer && typeof state.bgPlayer.stopVideo === 'function') state.bgPlayer.stopVideo();
+            
+            if (track.specialBg) {
+                dom.specialBgImage.style.backgroundImage = track.specialBg;
+                dom.specialBgContainer.style.opacity = '0.3';
+            } else if (track.videoBg) {
+                if (state.bgPlayer && typeof state.bgPlayer.loadVideoById === 'function') {
+                    state.bgPlayer.loadVideoById({videoId: track.videoBg, startSeconds: 0});
+                }
+                dom.specialBgContainer.style.opacity = '0.3';
+            } else {
+                dom.specialBgContainer.style.opacity = '0';
+            }
+        }
+
+        function updateTrackInfo(album, track, trackNumber) {
+            dom.albumTitle.textContent = album.name;
+            dom.trackNumber.textContent = `Track ${String(trackNumber).padStart(2, '0')}`;
+            dom.trackName.textContent = track.title;
+            dom.cd2d.style.backgroundImage = `url('${album.coverUrl}')`;
+        }
+        function updateUIIsPlaying(playing) {
+            dom.cd2d.classList.toggle('playing', playing);
+            dom.playBtn.classList.toggle('hidden', playing);
+            dom.pauseBtn.classList.toggle('hidden', !playing);
+        }
+        function formatTime(seconds) {
+            seconds = Math.floor(seconds) || 0;
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+        function updateProgressBar(currentTime, duration) {
+            const percentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+            const blockCount = 40;
+            const activeBlocks = Math.floor(blockCount * (percentage / 100));
+            
+            dom.progressBarContainer.innerHTML = '';
+            for (let i = 0; i < blockCount; i++) {
+                const block = document.createElement('div');
+                block.className = 'progress-block';
+                if (i < activeBlocks) block.classList.add('active');
+                block.onclick = (e) => {
+                    e.stopPropagation();
+                    const newTime = (i / blockCount) * duration;
+                    state.ytPlayer.seekTo(newTime, true);
+                };
+                dom.progressBarContainer.appendChild(block);
+            }
+        }
+        function updateTimeDisplay(currentTime, duration) {
+            dom.timeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+            updateProgressBar(currentTime, duration);
+        }
+
+        let visualizerId;
+        function drawVisualizer() {
+            const ctx = dom.visualizer.getContext('2d');
+            const width = dom.visualizer.width;
+            const height = dom.visualizer.height;
+            ctx.clearRect(0, 0, width, height);
+            const isPlaying = state.ytPlayer && state.ytPlayer.getPlayerState() === YT.PlayerState.PLAYING;
+            ctx.fillStyle = state.currentVisualizerColor;
+
+            if (state.visualizerMode === 'bars') {
+                const barCount = 32;
+                const barWidth = width / barCount;
+                for (let i = 0; i < barCount; i++) {
+                    const barHeight = isPlaying ? Math.random() * height : 2;
+                    ctx.fillRect(i * barWidth, height - barHeight, barWidth - 2, barHeight);
+                }
+            } else if (state.visualizerMode === 'wave') {
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = state.currentVisualizerColor;
+                ctx.beginPath();
+                const sliceWidth = width * 1.0 / 64;
+                let x = 0;
+                for (let i = 0; i < 64; i++) {
+                    const v = isPlaying ? Math.random() * height : height / 2;
+                    const y = v;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                    x += sliceWidth;
+                }
+                ctx.lineTo(width, height / 2);
+                ctx.stroke();
+            } else if (state.visualizerMode === 'circle') {
+                const radius = isPlaying ? 10 + (Math.random() * (height/2 - 10)) : 10;
+                ctx.beginPath();
+                ctx.arc(width / 2, height / 2, radius, 0, 2 * Math.PI, false);
+                ctx.fillStyle = state.currentVisualizerColor;
+                ctx.fill();
+            }
+            visualizerId = requestAnimationFrame(drawVisualizer);
+        }
+
+        function startProgressUpdater() {
+            stopProgressUpdater();
+            state.progressInterval = setInterval(() => {
+                if (state.ytPlayer && typeof state.ytPlayer.getCurrentTime === 'function') {
+                    updateTimeDisplay(state.ytPlayer.getCurrentTime(), state.ytPlayer.getDuration());
+                }
+            }, 500);
+            drawVisualizer();
+        }
+        function stopProgressUpdater() {
+            clearInterval(state.progressInterval);
+            cancelAnimationFrame(visualizerId);
+            const ctx = dom.visualizer.getContext('2d');
+            ctx.clearRect(0, 0, dom.visualizer.width, dom.visualizer.height);
+        }
+
+        function showTracklist() {
+            const album = albums[state.currentAlbumIndex];
+            dom.tracklistTitle.textContent = album.name;
+            dom.tracklistUl.innerHTML = '';
+            album.tracks.forEach((track, index) => {
+                const li = document.createElement('li');
+                li.className = 'p-2 cursor-pointer tracklist-item';
+                li.textContent = `${String(index + 1).padStart(2, '0')}. ${track.title}`;
+                if (index === state.currentTrackIndex) li.style.color = 'var(--ps2-yellow)';
+                li.onclick = () => { loadTrack(index, true); hideTracklist(); };
+                dom.tracklistUl.appendChild(li);
+            });
+            dom.tracklistPopup.classList.remove('hidden');
+        }
+        function hideTracklist() { dom.tracklistPopup.classList.add('hidden'); }
+        
+        function playStartupSound() {
+            const synth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.01, decay: 0.5, sustain: 0.2, release: 2 },
+                volume: -12 // Lower volume
+            }).toDestination();
+            synth.triggerAttackRelease(["C2", "G2", "C3"], "2s", Tone.now());
+            synth.triggerAttackRelease(["E3", "G3", "C4"], "2s", Tone.now() + 0.1);
+        }
+        
+        function playUiSound() {
+            if (!state.uiSfx) {
+                state.uiSfx = new Tone.Player({
+                    url: "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=", // Simple tick sound
+                    autostart: false,
+                    volume: -10
+                }).toDestination();
+            }
+            if (state.uiSfx.loaded) {
+                state.uiSfx.start();
+            }
+        }
+
+        function showSavingIndicator() {
+            dom.savingOverlay.style.opacity = '1';
+            setTimeout(() => {
+                dom.savingOverlay.style.opacity = '0';
+            }, 1000);
+        }
+
+        function startClock() {
+            if (state.clockInterval) clearInterval(state.clockInterval);
+            state.clockInterval = setInterval(() => {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                dom.clock.textContent = `${hours}:${minutes}`;
+            }, 1000);
+        }
+        function stopClock() { clearInterval(state.clockInterval); }
+
+        function resetScreensaver() {
+            clearTimeout(state.screensaverTimeout);
+            document.querySelector('.player-container').classList.remove('screensaver');
+            state.screensaverTimeout = setTimeout(() => {
+                document.querySelector('.player-container').classList.add('screensaver');
+            }, 120000); // 2 minutes
+        }
+
+        window.onload = () => {
+            renderSelectionScreen();
+            const controls = document.querySelector('.controls');
+            controls.addEventListener('click', (e) => {
+                if(e.target.closest('button')) playUiSound();
+            });
+
+            dom.playBtn.addEventListener('click', playMusic);
+            dom.pauseBtn.addEventListener('click', pauseMusic);
+            dom.stopBtn.addEventListener('click', stopMusic);
+            dom.nextBtn.addEventListener('click', playNextTrack);
+            dom.prevBtn.addEventListener('click', playPrevTrack);
+            dom.rewindBtn.addEventListener('click', () => seek(-10));
+            dom.forwardBtn.addEventListener('click', () => seek(10));
+            dom.backBtn.addEventListener('click', returnToSelection);
+            dom.volumeSlider.addEventListener('input', (e) => {
+                if (state.ytPlayer) state.ytPlayer.setVolume(e.target.value);
+            });
+            dom.volumeSlider.addEventListener('change', showSavingIndicator);
+            dom.tracklistBtn.addEventListener('click', showTracklist);
+            dom.closeTracklistBtn.addEventListener('click', hideTracklist);
+            
+            dom.shuffleBtn.addEventListener('click', () => {
+                state.isShuffle = !state.isShuffle;
+                dom.shuffleBtn.classList.toggle('active', state.isShuffle);
+                dom.shuffleBtn.style.color = state.isShuffle ? 'var(--ps2-yellow)' : 'var(--ps2-white)';
+            });
+            
+            dom.repeatBtn.addEventListener('click', () => {
+                const modes = ['all', 'one', 'none'];
+                const currentModeIndex = modes.indexOf(state.repeatMode);
+                state.repeatMode = modes[(currentModeIndex + 1) % modes.length];
+                dom.repeatBtn.textContent = `Repeat ${state.repeatMode.charAt(0).toUpperCase() + state.repeatMode.slice(1)}`;
+                dom.repeatBtn.classList.toggle('active', state.repeatMode !== 'none');
+                dom.repeatBtn.style.color = state.repeatMode !== 'none' ? 'var(--ps2-yellow)' : 'var(--ps2-white)';
+            });
+
+            dom.vizBtn.addEventListener('click', () => {
+                const modes = ['bars', 'wave', 'circle'];
+                const currentModeIndex = modes.indexOf(state.visualizerMode);
+                state.visualizerMode = modes[(currentModeIndex + 1) % modes.length];
+                dom.vizBtn.textContent = `Viz: ${state.visualizerMode.charAt(0).toUpperCase() + state.visualizerMode.slice(1)}`;
+            });
+            
+            window.addEventListener('mousemove', resetScreensaver);
+            window.addEventListener('keydown', resetScreensaver);
+        };
+    </script>
 </body>
 </html>
