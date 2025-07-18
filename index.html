@@ -11,10 +11,12 @@
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
         :root {
-            --glow-color: hsl(0, 0%, 85%);
-            --background-color: #0a0a10;
-            --text-color: #f9fafb;
-            --text-secondary: #d1d5db;
+            --glow-color: hsl(271, 76%, 70%);
+            --background-color: #1a1a2e;
+            --text-color: #e0e0e0;
+            --text-secondary: #a0a0c0;
+            --accent-color: #ff00ff;
+            --border-color: #0f0f18;
         }
 
         body {
@@ -22,7 +24,8 @@
             background-color: var(--background-color);
             color: var(--text-color);
             overflow: hidden;
-            cursor: crosshair;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white"><path d="M7 0h2v7H7zM0 7h7v2H0zM9 7h7v2H9zM7 9h2v7H7z"/></svg>') 8 8, crosshair;
+            image-rendering: pixelated;
         }
 
         .vhs-container {
@@ -35,307 +38,179 @@
             background: #000;
         }
 
-        /* --- Efeitos VHS e Estrelas --- */
-        #starfield { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        #vhs-tracking-line {
-            position: absolute;
-            top: -10%;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            z-index: 101;
-            pointer-events: none;
-            animation: tracking 8s infinite steps(10);
-        }
-        @keyframes tracking {
-            0% { top: 20%; }
-            20% { top: 50%; }
-            40% { top: 45%; }
-            60% { top: 80%; }
-            80% { top: 10%; }
-            100% { top: 30%; }
+        #starfield { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            z-index: 1; 
+            background-color: #0a0a10;
         }
 
-        /* --- Tela de Início --- */
+        .pixel-border {
+            border: 3px solid var(--border-color);
+            box-shadow: 4px 4px 0px var(--border-color);
+            transition: all 0.1s linear;
+        }
+        .pixel-border-inset {
+            border: 3px solid var(--border-color);
+            box-shadow: inset 2px 2px 0px var(--border-color);
+        }
+
         #start-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; height: 100%; position: absolute; z-index: 20; background-color: transparent; text-shadow: 0 0 10px var(--glow-color); transition: opacity 0.5s ease-out; }
-        #start-screen-content { display: none; } /* Inicia oculto */
+        #start-screen-content { display: none; }
         #start-screen.departing { animation: ship-accelerate 1s forwards; }
-        #start-button { font-size: 3rem; padding: 1rem 2rem; border: 2px solid var(--glow-color); background-color: transparent; color: var(--glow-color); cursor: pointer; animation: float 3s infinite ease-in-out; }
-        @keyframes float { 0%, 100% { transform: translateY(0); box-shadow: 0 0 20px var(--glow-color); } 50% { transform: translateY(-10px); box-shadow: 0 15px 30px var(--glow-color); } }
-        @keyframes ship-accelerate { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.5; } 100% { transform: scale(2); opacity: 0; } }
         
-        /* Animação de Boot */
-        #boot-sequence { font-size: 1.5rem; text-align: left; width: 80%; max-width: 600px; }
-        #boot-sequence p { margin: 0; white-space: nowrap; overflow: hidden; }
+        #start-button {
+            font-size: 2.5rem; padding: 0.5rem 2rem;
+            background-color: var(--background-color); color: var(--text-color); cursor: pointer;
+        }
+        #start-button:hover { background-color: var(--accent-color); color: var(--border-color); text-shadow: none; }
+        #start-button:active { transform: translate(4px, 4px); box-shadow: none; }
+
+        @keyframes ship-accelerate { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(10); opacity: 0; } }
+        
+        #boot-sequence { font-size: 1.5rem; text-align: left; width: 90%; max-width: 600px; }
+        #boot-sequence p { margin: 0; }
         .typing-cursor::after { content: '█'; animation: blink 1s step-end infinite; }
 
-        /* --- Conteúdo Principal --- */
         #main-content { width: 100%; height: 100%; display: none; z-index: 5; }
         .crt-screen { position: relative; width: 100%; height: 100%; background: transparent; overflow: hidden; display: flex; }
-        .crt-screen::before, .crt-screen::after { content: ' '; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; z-index: 2; pointer-events: none; }
-        .crt-screen::before { background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 4px, 6px 100%; animation: scanline 10s linear infinite; }
-        .crt-screen::after { background: rgba(18, 16, 16, 0.1); opacity: 0; animation: flicker 0.15s infinite; }
-        @keyframes flicker { 0% { opacity: 0.1; } 20% { opacity: 1; } 40% { opacity: 0.3; } 60% { opacity: 0.8; } 80% { opacity: 0.2; } 100% { opacity: 1; } }
-        @keyframes scanline { 0% { transform: translateY(0); } 100% { transform: translateY(100vh); } }
+        .crt-screen::before {
+            content: ' '; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 6px; z-index: 2; pointer-events: none;
+        }
 
-        /* --- Navegação Lateral --- */
-        #side-nav { width: 200px; height: 100%; padding: 4rem 1rem 2rem 1.5rem; border-right: 2px solid var(--glow-color); z-index: 5; flex-shrink: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(2px); }
+        #side-nav { width: 220px; height: 100%; padding: 2rem 1rem; border-right: 3px solid var(--border-color); z-index: 5; flex-shrink: 0; background: rgba(0,0,0,0.3); }
         #side-nav ul { list-style: none; padding: 0; margin: 0; }
-        #side-nav li { font-size: 1.5rem; margin-bottom: 0.75rem; cursor: pointer; color: var(--text-secondary); transition: all 0.2s ease; }
-        #side-nav li:hover, #side-nav li.active-link { color: var(--glow-color); text-shadow: 0 0 8px var(--glow-color); }
-        #side-nav li.active-link::before { content: '> '; animation: blink 1s infinite; }
-        #changelog-btn { font-size: 1rem; opacity: 0.5; margin-top: 2rem; }
-        #changelog-btn:hover { opacity: 1; }
+        #side-nav li {
+            font-size: 1.8rem; margin-bottom: 1rem; cursor: pointer; color: var(--text-secondary);
+            padding: 0.5rem; transition: all 0.2s ease;
+        }
+        #side-nav li:hover, #side-nav li.active-link { color: var(--accent-color); background-color: rgba(255, 0, 255, 0.1); }
+        #side-nav li.active-link::before { content: '>'; }
+        .text-glitch-hover { animation: text-glitch 0.3s linear infinite; }
+        @keyframes text-glitch {
+            0% { text-shadow: 2px 2px 0px var(--accent-color), -2px -2px 0px #00ffff; }
+            25% { text-shadow: -2px 2px 0px var(--accent-color), 2px -2px 0px #00ffff; }
+            50% { text-shadow: 2px -2px 0px var(--accent-color), -2px 2px 0px #00ffff; }
+            75% { text-shadow: -2px -2px 0px var(--accent-color), 2px 2px 0px #00ffff; }
+            100% { text-shadow: 2px 2px 0px var(--accent-color), -2px -2px 0px #00ffff; }
+        }
 
-        /* --- Conteúdo da Memória --- */
-        .vhs-content { flex-grow: 1; height: 100%; position: relative; padding: 2rem; overflow-y: auto; }
-        .memory { display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; animation: fadeIn 1s ease-in-out; }
+        .vhs-content { flex-grow: 1; height: 100%; position: relative; padding: 1rem; overflow-y: auto; }
+        .memory { display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; animation: fadeIn 0.5s ease-in-out; }
         .memory.active { display: flex; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .glitch-text { text-shadow: 0 0 8px var(--glow-color), 1px 1px 1px rgba(255,0,0,0.7), -1px -1px 1px rgba(0,0,255,0.7); }
+        .glitch-text { text-shadow: 2px 2px 0px var(--accent-color); }
 
-        .vhs-header { position: absolute; top: 1.5rem; right: 2rem; display: flex; align-items: center; gap: 1rem; font-size: 1.5rem; z-index: 5; text-shadow: 0 0 5px var(--glow-color); }
-        .play-indicator { color: #ff4136; animation: blink 1s infinite; }
+        .vhs-header { position: absolute; top: 1rem; right: 1.5rem; display: flex; align-items: center; gap: 1rem; font-size: 1.5rem; z-index: 5; }
+        .play-indicator { color: #ff3838; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0; } }
 
-        /* --- Seção Sobre Mim Simplificada --- */
-        #profile-pic {
-            width: 200px;
-            height: 200px;
-            border: 3px solid var(--glow-color);
-            background-color: #222;
-            box-shadow: 0 0 15px var(--glow-color);
-            object-fit: cover;
-        }
+        #profile-pic { width: 180px; height: 180px; object-fit: cover; }
+        .content-box { background-color: rgba(0,0,0,0.2); padding: 2rem; }
 
-        /* --- Seção de Projetos com Fitas VHS --- */
-        .projects-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 4rem;
-            perspective: 1000px;
-        }
-        .vhs-tape-wrapper {
-            width: 250px;
-            height: 150px;
-        }
-        .vhs-tape {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            transform-style: preserve-3d;
-            animation: spin-tape 12s infinite linear;
-            cursor: pointer;
-        }
+        .projects-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 4rem; perspective: 1000px; }
+        .vhs-tape-wrapper { width: 280px; height: 180px; cursor: pointer; }
+        .vhs-tape { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; animation: spin-tape 12s infinite linear; }
+        .vhs-tape-wrapper:hover .vhs-tape { animation-play-state: paused; }
         @keyframes spin-tape { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
         .tape-face {
-            position: absolute;
-            width: 250px;
-            height: 150px;
-            background-color: #2a2a2a;
-            border: 2px solid #1a1a1a;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            position: absolute; width: 280px; height: 180px;
+            background-color: #2a2a2a; border: 3px solid var(--border-color);
+            display: flex; align-items: center; justify-content: center;
         }
         .front {
-            transform: translateZ(25px);
-            background-color: #3d3d3d;
-            flex-direction: column;
-            padding: 10px;
+            transform: translateZ(25px); background-color: #3d3d3d;
+            flex-direction: column; padding: 10px;
         }
         .back { transform: rotateY(180deg) translateZ(25px); }
         .tape-label {
-            width: 80%;
-            height: 60%;
-            background-color: #e0e0e0;
-            border: 1px dashed #555;
-            color: #111;
-            font-size: 1.2rem;
-            padding: 5px;
-            text-align: center;
-            text-shadow: none;
+            width: 80%; height: 60%; background-color: #e0e0e0;
+            border: 2px dashed #555; color: #111; font-size: 1.8rem;
+            padding: 5px; text-align: center; text-shadow: none;
+            display: flex; align-items: center; justify-content: center;
         }
-        .tape-spools {
-            display: flex;
-            justify-content: space-around;
-            width: 100%;
-            margin-top: 10px;
-        }
-        .spool {
-            width: 40px;
-            height: 40px;
-            background-color: #111;
-            border-radius: 50%;
-            border: 5px solid #2a2a2a;
-        }
+        .tape-spools { display: flex; justify-content: space-around; width: 100%; margin-top: 10px; }
+        .spool { width: 45px; height: 45px; background-color: #111; border-radius: 50%; border: 5px solid #2a2a2a; }
 
-        /* --- Seção Histórias (Netflix) --- */
-        .historias-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .featured-episode {
-            width: 100%;
-            height: 40%;
-            background-color: #1a1a1a;
-            border: 2px solid var(--glow-color);
-            margin-bottom: 2rem;
-            background-size: cover;
-            background-position: center 30%; /* Ajustado para subir a imagem */
-        }
-        .episodes-carousel {
-            width: 100%;
-            overflow-x: auto;
-            padding-bottom: 1rem;
-        }
-        .episodes-list {
-            display: flex;
-            gap: 1.5rem;
-            padding: 0 1rem;
-        }
+        .historias-container { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+        .featured-episode { width: 100%; height: 40%; margin-bottom: 1rem; background-size: cover; background-position: center; image-rendering: pixelated; }
+        .episodes-list { display: flex; gap: 1rem; padding: 0 1rem; overflow-x: auto; }
         .episode-card {
-            flex-shrink: 0;
-            width: 250px;
-            aspect-ratio: 16 / 9;
-            background-color: #1a1a1a;
-            border: 2px solid var(--glow-color);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.3s ease;
-            cursor: pointer;
-            position: relative;
-            background-size: cover;
-            background-position: center;
+            flex-shrink: 0; width: 220px; aspect-ratio: 4 / 3;
+            display: flex; align-items: flex-end; justify-content: flex-start;
+            padding: 0.5rem; cursor: pointer; position: relative;
+            background-size: cover; background-position: center;
         }
-        .episode-card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 15px var(--glow-color);
-        }
-        .episode-card .play-icon {
-            position: absolute;
-            font-size: 4rem;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        .episode-card:hover .play-icon {
-            opacity: 0.8;
-        }
-        .episode-card-title {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            font-size: 1.2rem;
-            background-color: rgba(0,0,0,0.5);
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-        }
+        .episode-card-title { font-size: 1.5rem; background-color: rgba(0,0,0,0.7); padding: 0.2rem 0.5rem; }
 
-        /* --- Modal de Episódio --- */
-        #episode-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.8);
-            backdrop-filter: blur(5px);
-            z-index: 200;
-            display: none; /* Inicia oculto */
-            align-items: center;
-            justify-content: center;
-        }
+        #episode-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); z-index: 200; display: none; align-items: center; justify-content: center; padding: 1rem; }
         .modal-content {
-            background-color: #0a0a10;
-            border: 2px solid var(--glow-color);
-            border-radius: 8px;
-            width: 90%;
-            max-width: 800px;
-            height: 80%;
-            max-height: 600px;
-            padding: 2rem;
-            position: relative;
-            display: flex;
-            flex-direction: column;
+            width: 100%; max-width: 700px; height: 80%;
+            padding: 1rem; position: relative; display: flex; flex-direction: column;
+            background-color: var(--background-color);
+            opacity: 0; transform: scale(0.9);
+            animation: modal-fade-in 0.3s ease-out forwards;
         }
-        .modal-close {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            font-size: 2rem;
-            cursor: pointer;
-            color: var(--glow-color);
-        }
-        #modal-episode-title {
-            margin-bottom: 1rem;
-        }
-        #modal-episode-story {
-            flex-grow: 1;
-            overflow-y: auto;
-            text-align: left;
-            font-size: 1.2rem;
-            line-height: 1.6;
-        }
+        @keyframes modal-fade-in { to { opacity: 1; transform: scale(1); } }
+        .modal-close { position: absolute; top: 0.5rem; right: 1rem; font-size: 2.5rem; cursor: pointer; }
+        .modal-close:hover { color: var(--accent-color); }
+        #modal-episode-title { margin-bottom: 1rem; font-size: 2.5rem; }
+        #modal-episode-story { flex-grow: 1; overflow-y: auto; font-size: 1.5rem; line-height: 1.4; }
 
-        /* --- Seção Terminal --- */
-        .terminal-container {
-            width: 100%;
-            height: 100%;
-            background-color: #0a0a10;
-            border: 2px solid var(--glow-color);
-            padding: 1rem;
-            font-size: 1.2rem;
-            line-height: 1.5;
-            overflow-y: auto;
-            text-align: left;
-        }
-        .terminal-output {
-            white-space: pre-wrap;
-        }
-        .terminal-input-line {
-            display: flex;
-        }
-        .terminal-prompt {
-            margin-right: 0.5rem;
-        }
-        .terminal-input {
-            flex-grow: 1;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: var(--text-color);
-        }
+        .terminal-container { width: 100%; height: 100%; padding: 1rem; font-size: 1.5rem; line-height: 1.5; overflow-y: auto; text-align: left; }
+        .terminal-input { background: transparent; border: none; outline: none; color: var(--text-color); width: 100%; }
         
-        /* --- Responsividade --- */
+        #notification-container {
+            position: fixed; top: 20px; right: 20px; z-index: 1000;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .notification {
+            padding: 1rem; background-color: var(--background-color); color: var(--text-color);
+            animation: slideIn 0.5s ease-out forwards, fadeOut 0.5s ease-in 4.5s forwards;
+        }
+        @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateX(120%); } }
+
+        #music-player {
+            position: fixed; bottom: 10px; left: 10px; z-index: 1000;
+            background-color: rgba(0,0,0,0.5); padding: 0.5rem 1rem; font-size: 1.2rem;
+        }
+        #youtube-player { display: none; }
+
         @media (max-width: 768px) {
             .crt-screen { flex-direction: column; }
-            #side-nav { width: 100%; height: auto; display: flex; flex-wrap: wrap; justify-content: center; padding: 1rem; border-right: none; border-bottom: 2px solid var(--glow-color); }
-            #side-nav ul { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem 1rem; }
-            #side-nav li { font-size: 1.2rem; margin-bottom: 0; }
-            .episode-card { width: 200px; }
-            .modal-content { padding: 1rem; }
-            .modal-close { top: 0.5rem; right: 0.5rem; }
+            #side-nav {
+                width: 100%; height: auto; display: flex;
+                padding: 0.5rem; border-right: none; border-bottom: 3px solid var(--border-color);
+                overflow-x: auto;
+            }
+            #side-nav ul { display: flex; gap: 0.5rem; }
+            #side-nav li { font-size: 1.5rem; margin-bottom: 0; flex-shrink: 0; }
+            .vhs-content { padding: 1rem; }
+            h1 { font-size: 4rem !important; }
+            h2 { font-size: 2.5rem !important; }
+            p, .text-xl { font-size: 1.2rem !important; }
+            #music-player { font-size: 1rem; }
         }
     </style>
 </head>
 <body>
+    <div id="notification-container"></div>
+    <div id="youtube-player"></div>
 
     <div class="vhs-container">
         <canvas id="starfield"></canvas>
-        <div id="vhs-tracking-line"></div>
 
         <div id="start-screen">
             <div id="boot-sequence"></div>
             <div id="start-screen-content">
-                <h1 class="text-7xl mb-8 glitch-text">Doquinha.DAT</h1>
-                <button id="start-button">START</button>
+                <h1 class="text-8xl mb-8 glitch-text">Doquinha.DAT</h1>
+                <button id="start-button" class="pixel-border">START</button>
             </div>
         </div>
 
@@ -343,202 +218,243 @@
             <div class="crt-screen">
                 <nav id="side-nav">
                     <ul>
-                        <li data-mem="mem-inicio">Início</li>
-                        <li data-mem="mem-sobre">Sobre</li>
-                        <li data-mem="mem-projetos">Projetos</li>
-                        <li data-mem="mem-amigos">Amigos</li>
-                        <li data-mem="mem-historias">Histórias</li>
-                        <li data-mem="mem-terminal">Terminal</li>
-                        <li id="changelog-btn" data-mem="mem-changelogs">Changelogs</li>
+                        <li data-mem="mem-inicio">INICIO</li>
+                        <li data-mem="mem-sobre">SOBRE</li>
+                        <li data-mem="mem-projetos">PROJETOS</li>
+                        <li data-mem="mem-amigos">AMIGOS</li>
+                        <li data-mem="mem-terminal">TERMINAL</li>
+                        <li data-mem="mem-changelogs">LOGS</li>
                     </ul>
                 </nav>
 
                 <div class="vhs-content">
                     <div class="vhs-header">
-                        <span class="play-indicator">▶ REC</span>
-                        <span id="vhs-timestamp" class="timestamp">0000:00:00:00</span>
+                        <span class="play-indicator">■ REC</span>
+                        <span id="vhs-timestamp">0000:00:00:00</span>
                     </div>
 
                     <div id="mem-inicio" class="memory">
                         <div class="text-center">
                             <h1 class="text-8xl mb-4 glitch-text">Dokas</h1>
                             <p class="text-2xl max-w-lg mx-auto">"se passei pela tristeza, pelo menos posso fazer piadas disso e tirar risadas"</p>
-                            <p class="text-sm opacity-50 mt-8">SYSTEM BOOT DATE: 27/12/2007</p>
+                            <p class="text-xl opacity-50 mt-8">SYSTEM BOOT DATE: 27/12/2007</p>
                         </div>
                     </div>
 
                     <div id="mem-sobre" class="memory">
-                        <div class="flex flex-col items-center max-w-2xl">
-                            <img id="profile-pic" class="rounded-full mb-8" src="" alt="Foto de perfil">
+                        <div class="content-box pixel-border-inset flex flex-col items-center max-w-3xl gap-6 p-6">
+                            <img id="profile-pic" class="pixel-border" src="" alt="Imagem de perfil pixelada">
                             <div class="text-center text-xl space-y-4">
-                                <p>Carregando dados sobre Doquinha...</p>
+                                <h2 class="text-4xl glitch-text">Sobre Mim</h2>
                                 <p>Salve meus manos, eu atualizei o portfólio pra ser algo mais simples e mais organizado. Aqui vai ser a minha caixa de pensamentos. Vou atualizando com o tempo, acompanhe o changelogs pra algo.</p>
                             </div>
                         </div>
                     </div>
 
                     <div id="mem-projetos" class="memory">
-                        <h2 class="text-4xl md:text-6xl mb-12 glitch-text">PROJETOS</h2>
-                        <div class="projects-container">
-                            <a href="https://doquinha771.github.io/memoriesps2/" target="_blank" class="vhs-tape-wrapper">
-                                <div class="vhs-tape">
-                                    <div class="tape-face front">
-                                        <div class="tape-label">Memories PS2</div>
-                                        <div class="tape-spools"><div class="spool"></div><div class="spool"></div></div>
+                        <div class="w-full text-center">
+                            <h2 class="text-6xl mb-10 glitch-text">PROJETOS</h2>
+                            <div class="projects-container">
+                                <a href="https://doquinha771.github.io/memoriesps2/" target="_blank" class="vhs-tape-wrapper">
+                                    <div class="vhs-tape">
+                                        <div class="tape-face front">
+                                            <div class="tape-label">Memories PS2</div>
+                                            <div class="tape-spools"><div class="spool"></div><div class="spool"></div></div>
+                                        </div>
+                                        <div class="tape-face back"></div>
                                     </div>
-                                    <div class="tape-face back"></div>
-                                </div>
-                            </a>
-                            <a href="https://doquinha771.github.io/SPG/" target="_blank" class="vhs-tape-wrapper">
-                                <div class="vhs-tape">
-                                    <div class="tape-face front">
-                                        <div class="tape-label">SPG Player</div>
-                                        <div class="tape-spools"><div class="spool"></div><div class="spool"></div></div>
+                                </a>
+                                <a href="https://doquinha771.github.io/SPG/" target="_blank" class="vhs-tape-wrapper">
+                                    <div class="vhs-tape">
+                                        <div class="tape-face front">
+                                            <div class="tape-label">SPG Player</div>
+                                            <div class="tape-spools"><div class="spool"></div><div class="spool"></div></div>
+                                        </div>
+                                        <div class="tape-face back"></div>
                                     </div>
-                                    <div class="tape-face back"></div>
-                                </div>
-                            </a>
+                                </a>
+                            </div>
                         </div>
                     </div>
                     
                     <div id="mem-amigos" class="memory">
-                        <div class="flex flex-col items-center max-w-4xl gap-8 p-4">
-                            <img src="https://i.pinimg.com/736x/1a/5f/94/1a5f947d37b4581ce5b05ea0da789846.jpg" class="w-full md:w-2/3 rounded-lg" style="box-shadow: 0 0 15px var(--glow-color);">
-                            <p class="text-xl text-center mt-6">É, rapaziada sou muito grato por todos que estão comigo lado a lado nessa jornada. Desde o Vx, que já tirou do bolso pra me ajudar a comprar um jogo, até a galera do Traki Games, com quem troco papo reto, dou risada e passo horas jogando — vocês são irmãos de verdade. E pra todos que sempre colam pra uma resenha, seja nas ideias ou nas brincadeiras, saibam que vocês são feras demais. Obrigado por serem aliados desse bobo aqui. Tamo junto sempre!</p>
+                        <div class="content-box pixel-border-inset flex flex-col items-center max-w-4xl gap-6 p-6">
+                            <img id="amigos-img" src="https://i.pinimg.com/736x/1a/5f/94/1a5f947d37b4581ce5b05ea0da789846.jpg" class="w-full md:w-2/3 pixel-border cursor-pointer" alt="Imagem de amigos pixelada">
+                             <h2 class="text-4xl mt-4 glitch-text">Meus Amigos</h2>
+                            <p class="text-xl text-center">É, rapaziada sou muito grato por todos que estão comigo lado a lado nessa jornada. Desde o Vx, que já tirou do bolso pra me ajudar a comprar um jogo, até a galera do Traki Games, com quem troco papo reto, dou risada e passo horas jogando — vocês são irmãos de verdade. E pra todos que sempre colam pra uma resenha, seja nas ideias ou nas brincadeiras, saibam que vocês são feras demais. Obrigado por serem aliados desse bobo aqui. Tamo junto sempre!</p>
                         </div>
                     </div>
 
                     <div id="mem-historias" class="memory">
                         <div class="historias-container">
-                            <div id="featured-episode" class="featured-episode" style="background-image: url('https://i.pinimg.com/1200x/f3/ce/59/f3ce59b9a7b7c7f1c145954c255c7e00.jpg');">
-                            </div>
-                            <h2 class="text-2xl mb-4 pl-4 self-start glitch-text">Temporada 1</h2>
+                            <div id="featured-episode" class="featured-episode pixel-border-inset" style="background-image: url('https://i.pinimg.com/1200x/f3/ce/59/f3ce59b9a7b7c7f1c145954c255c7e00.jpg');"></div>
+                            <h2 class="text-3xl mb-4 self-start glitch-text">TEMPORADA 1 - FITAS ENCONTRADAS</h2>
                             <div class="episodes-carousel">
-                                <div id="episodes-list" class="episodes-list">
-                                    <!-- Episódios serão gerados aqui -->
-                                </div>
+                                <div id="episodes-list" class="episodes-list"></div>
                             </div>
                         </div>
                     </div>
 
                     <div id="mem-terminal" class="memory">
-                        <div class="terminal-container">
+                        <div class="terminal-container pixel-border-inset">
                             <div id="terminal-output" class="terminal-output"></div>
                             <div class="terminal-input-line">
-                                <span class="terminal-prompt">D:\></span>
+                                <span class="terminal-prompt">></span>
                                 <input type="text" id="terminal-input" class="terminal-input" autofocus>
                             </div>
                         </div>
                     </div>
 
                     <div id="mem-changelogs" class="memory">
-                        <h2 class="text-4xl md:text-6xl mb-6 glitch-text">CHANGELOGS</h2>
-                        <div id="changelog-content" class="text-left max-w-2xl text-xl space-y-4"></div>
+                        <div class="w-full max-w-3xl">
+                            <h2 class="text-6xl mb-6 glitch-text">LOGS DO SISTEMA</h2>
+                            <div id="changelog-content" class="text-left text-xl space-y-4 content-box pixel-border-inset p-4"></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Modal para Episódios -->
         <div id="episode-modal">
-            <div class="modal-content">
-                <span id="modal-close" class="modal-close">&times;</span>
-                <h2 id="modal-episode-title" class="text-3xl"></h2>
+            <div class="modal-content pixel-border">
+                <span id="modal-close" class="modal-close">X</span>
+                <h2 id="modal-episode-title" class="glitch-text"></h2>
                 <div id="modal-episode-story"></div>
             </div>
         </div>
+        
+        <div id="music-player" class="pixel-border"></div>
     </div>
 
     <script>
+        // --- Player do YouTube ---
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        var player;
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('youtube-player', {
+                height: '0',
+                width: '0',
+                videoId: '-aE8Zj2HHrU',
+                playerVars: { 'autoplay': 1, 'controls': 0, 'loop': 1, 'playlist': '-aE8Zj2HHrU' },
+                events: { 'onReady': onPlayerReady }
+            });
+        }
+
+        function onPlayerReady(event) {
+            event.target.setVolume(5);
+        }
+        
         document.addEventListener('DOMContentLoaded', () => {
             const startButton = document.getElementById('start-button');
             const startScreen = document.getElementById('start-screen');
             const mainContent = document.getElementById('main-content');
-            
             const navLinks = document.querySelectorAll('#side-nav li');
             const memories = document.querySelectorAll('.memory');
             const timestampEl = document.getElementById('vhs-timestamp');
             const profilePic = document.getElementById('profile-pic');
-            
+            const amigosImg = document.getElementById('amigos-img');
             let activeMemoryId = 'mem-inicio';
             let gameStarted = false;
             
+            // --- Lógica do Particle Network + Estrelas ---
             const canvas = document.getElementById('starfield');
             const ctx = canvas.getContext('2d');
+            let particles = [];
             let stars = [];
-            let starSpeedMultiplier = 1;
-
-            function initializeStars() {
-                stars = [];
-                const starCount = window.innerWidth / 4;
-                for (let i = 0; i < starCount; i++) {
-                    stars.push({
-                        x: Math.random() * canvas.width,
-                        y: Math.random() * canvas.height,
-                        size: Math.random() * 2 + 0.5,
-                        speed: (Math.random() * 0.7 + 0.2) * starSpeedMultiplier,
-                        opacity: Math.random() * 0.5 + 0.5
-                    });
-                }
-            }
 
             function resizeCanvas() {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
-                initializeStars();
-            }
-            window.addEventListener('resize', resizeCanvas);
-            resizeCanvas();
-
-            function drawStars() {
-                ctx.fillStyle = 'rgba(10, 10, 16, 0.4)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
+                // Inicializa Partículas (Plexus)
+                particles = [];
+                const particleCount = Math.floor(canvas.width / 20);
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        vx: (Math.random() - 0.5) * 0.3,
+                        vy: (Math.random() - 0.5) * 0.3,
+                        radius: Math.random() * 2 + 1
+                    });
+                }
+
+                // Inicializa Estrelas Cadentes
+                stars = [];
+                const starCount = Math.floor(canvas.width / 10);
+                for (let i = 0; i < starCount; i++) {
+                     stars.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        radius: Math.random() * 1.0 + 0.5,
+                        speed: Math.random() * 0.2 + 0.1
+                    });
+                }
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            function animateBackground() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 1. Desenha Estrelas Cadentes
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
                 stars.forEach(star => {
                     star.y += star.speed;
                     if (star.y > canvas.height) {
                         star.y = 0;
                         star.x = Math.random() * canvas.width;
                     }
-
                     ctx.beginPath();
-                    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(249, 250, 251, ${star.opacity})`;
-                    ctx.shadowColor = `hsl(0, 0%, 85%)`;
-                    ctx.shadowBlur = 10;
+                    ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
                     ctx.fill();
                 });
-                
-                ctx.shadowBlur = 0;
-                requestAnimationFrame(drawStars);
-            }
-            drawStars();
 
-            // --- Lógica da Foto de Perfil ---
-            function setProfilePicture() {
-                const today = new Date();
-                const month = today.getMonth(); // 0-indexed: 11 is December
-                const day = today.getDate();
+                // 2. Desenha Rede de Partículas (Plexus)
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.fill();
+                });
 
-                const defaultPicUrl = 'https://i.pinimg.com/736x/ac/1a/51/ac1a510577d3b779d5353b60f206b5f1.jpg';
-                const christmasPicUrl = 'https://i.pinimg.com/736x/e3/98/57/e39857fcd14405299573cd1324546d56.jpg';
-
-                if (month === 11 && day >= 25) { // December 25th to 31st
-                    profilePic.src = christmasPicUrl;
-                } else {
-                    profilePic.src = defaultPicUrl;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dist = Math.sqrt(Math.pow(particles[i].x - particles[j].x, 2) + Math.pow(particles[i].y - particles[j].y, 2));
+                        if (dist < 120) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
+                    }
                 }
+
+                requestAnimationFrame(animateBackground);
+            }
+            
+            function setProfilePicture() {
+                const defaultPicUrl = 'https://i.pinimg.com/736x/ac/1a/51/ac1a510577d3b779d5353b60f206b5f1.jpg';
+                profilePic.src = defaultPicUrl;
             }
             setProfilePicture();
 
-            // --- Animação de Boot ---
             const bootLines = [
-                "INITIATING SYSTEM...",
-                "LOADING DOQUINHA.DAT...",
-                "CHECKING MEMORY...",
-                "MEMORY OK.",
-                "LOADING STORIES...",
-                "ALL SYSTEMS GO.",
+                "INICIANDO DOQUINHA.DAT OS...",
+                "ACESSO CONCEDIDO.",
+                "CARREGANDO ARQUIVOS DE MEMORIA...",
+                "ARQUIVOS SECRETOS ENCONTRADOS: 'VHS_CLUB'",
+                "SISTEMA PRONTO. BEM-VINDO.",
             ];
             const bootSequenceEl = document.getElementById('boot-sequence');
             const startScreenContent = document.getElementById('start-screen-content');
@@ -553,7 +469,7 @@
                         bootSequenceEl.children[lineIndex - 1].querySelector('.typing-cursor').remove();
                     }
                     lineIndex++;
-                    setTimeout(runBootSequence, 500 + Math.random() * 300);
+                    setTimeout(runBootSequence, 400);
                 } else {
                     setTimeout(() => {
                         bootSequenceEl.style.display = 'none';
@@ -564,10 +480,14 @@
             runBootSequence();
 
             startButton.addEventListener('click', async () => {
-                // Efeito sonoro
                 await Tone.start();
-                const synth = new Tone.Synth().toDestination();
-                synth.triggerAttackRelease("C2", "8n");
+                const synth = new Tone.Synth({ oscillator: { type: 'square' } }).toDestination();
+                synth.triggerAttackRelease("C3", "8n");
+
+                if (player && typeof player.playVideo === 'function') {
+                    player.playVideo();
+                    document.getElementById('music-player').innerHTML = `♪ Tocando: Sorriso - Hakuro`;
+                }
 
                 startScreen.classList.add('departing');
                 setTimeout(() => {
@@ -576,8 +496,11 @@
                     gameStarted = true;
                     setInterval(updateTimestamp, 1000);
                     switchMemory(activeMemoryId, true);
+                    showNotification("Bem-vindo ao Doquinha.DAT!");
                 }, 1000);
             });
+            
+            animateBackground();
 
             const startDate = new Date('2007-12-27T00:00:00');
             function updateTimestamp() {
@@ -604,14 +527,18 @@
                 }
                 navLinks.forEach(link => link.classList.toggle('active-link', link.dataset.mem === targetId));
             }
-
+            
+            // Event Listeners para features
             navLinks.forEach(link => {
-                link.addEventListener('click', () => {
-                    switchMemory(link.dataset.mem);
-                });
+                link.addEventListener('click', () => switchMemory(link.dataset.mem));
+                link.addEventListener('mouseenter', () => link.classList.add('text-glitch-hover'));
+                link.addEventListener('mouseleave', () => link.classList.remove('text-glitch-hover'));
+            });
+
+            amigosImg.addEventListener('click', () => {
+                showNotification("Conexão com aliados estável.");
             });
             
-            // --- Lógica de Histórias (Netflix) ---
             const episodesList = document.getElementById('episodes-list');
             const episodeModal = document.getElementById('episode-modal');
             const modalCloseBtn = document.getElementById('modal-close');
@@ -619,53 +546,39 @@
             const modalStory = document.getElementById('modal-episode-story');
 
             const episodeData = [
-                { title: 'Pensando em sonhar', story: '', cover: 'https://i.pinimg.com/1200x/40/e9/29/40e92966839f295a9f879017914094c7.jpg', position: 'center' },
-                { title: 'Meio cheio e vazio', story: '', cover: 'https://i.pinimg.com/1200x/8d/95/d7/8d95d79e5174589bc2ec8f9dac4f782a.jpg', position: 'center' },
-                { title: 'Acompanhado', story: '', cover: 'https://i.pinimg.com/1200x/3c/9f/59/3c9f59ae869ef47e164ee3e63cbb12e7.jpg', position: 'center 70%' },
-                { title: 'As noites', story: '', cover: 'https://i.pinimg.com/736x/06/91/b6/0691b6af1d093c6e397eacc82571dc48.jpg', position: 'center' },
-                { title: 'É pra valer', story: '', cover: 'https://i.pinimg.com/736x/01/60/cf/0160cf7402819382f9f7c03b4b968f94.jpg', position: 'center 30%' },
+                { title: 'Pensando em sonhar', story: 'Em breve...', cover: 'https://i.pinimg.com/1200x/40/e9/29/40e92966839f295a9f879017914094c7.jpg' },
+                { title: 'Meio cheio e vazio', story: 'Em breve...', cover: 'https://i.pinimg.com/1200x/8d/95/d7/8d95d79e5174589bc2ec8f9dac4f782a.jpg' },
+                { title: 'Acompanhado', story: 'Em breve...', cover: 'https://i.pinimg.com/1200x/3c/9f/59/3c9f59ae869ef47e164ee3e63cbb12e7.jpg' },
+                { title: 'As noites', story: 'Em breve...', cover: 'https://i.pinimg.com/736x/06/91/b6/0691b6af1d093c6e397eacc82571dc48.jpg' },
+                { title: 'É pra valer', story: 'Em breve...', cover: 'https://i.pinimg.com/736x/01/60/cf/0160cf7402819382f9f7c03b4b968f94.jpg' },
             ];
 
             episodeData.forEach((ep, index) => {
                 const card = document.createElement('div');
-                card.className = 'episode-card';
-                card.dataset.index = index;
+                card.className = 'episode-card pixel-border';
                 card.style.backgroundImage = `url('${ep.cover}')`;
-                card.style.backgroundPosition = ep.position;
-                card.innerHTML = `
-                    <span class="play-icon">▶</span>
-                    <span class="episode-card-title">${ep.title || `S01E${index + 1}`}</span>
-                `;
+                card.innerHTML = `<span class="episode-card-title">${ep.title}</span>`;
                 card.addEventListener('click', () => {
-                    const episode = episodeData[index];
-                    modalTitle.textContent = episode.title || `Episódio ${index + 1}`;
-                    modalStory.textContent = episode.story || 'Relato em breve...';
+                    modalTitle.textContent = ep.title;
+                    modalStory.textContent = ep.story;
                     episodeModal.style.display = 'flex';
                 });
                 episodesList.appendChild(card);
             });
 
-            function closeModal() {
-                episodeModal.style.display = 'none';
-            }
-
+            function closeModal() { episodeModal.style.display = 'none'; }
             modalCloseBtn.addEventListener('click', closeModal);
-            episodeModal.addEventListener('click', (e) => {
-                if (e.target === episodeModal) {
-                    closeModal();
-                }
-            });
+            episodeModal.addEventListener('click', (e) => { if (e.target === episodeModal) closeModal(); });
 
-            // --- Lógica do Terminal ---
             const terminalInput = document.getElementById('terminal-input');
             const terminalOutput = document.getElementById('terminal-output');
-            const welcomeMessage = 'Bem-vindo ao Doquinha.DAT OS [Versão 1.0]\nDigite "help" para ver a lista de comandos.\n\n';
+            const welcomeMessage = 'DOQUINHA.DAT OS [v3.7_SUPERNOVA]\nDigite "ajuda" para ver os comandos.\n\n';
             terminalOutput.textContent = welcomeMessage;
 
             terminalInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     const command = terminalInput.value.trim().toLowerCase();
-                    terminalOutput.textContent += `D:\\>${command}\n`;
+                    terminalOutput.textContent += `>${command}\n`;
                     processCommand(command);
                     terminalInput.value = '';
                     terminalInput.parentElement.parentElement.scrollTop = terminalInput.parentElement.parentElement.scrollHeight;
@@ -675,68 +588,84 @@
             function processCommand(command) {
                 const [cmd, ...args] = command.split(' ');
                 switch (cmd) {
-                    case 'help':
-                        terminalOutput.textContent += 'Comandos disponíveis:\n  help      - Mostra esta lista\n  date      - Exibe a data e hora atuais\n  clear     - Limpa a tela do terminal\n  nav <aba> - Navega para a seção especificada (ex: nav sobre)\n\n';
+                    case 'ajuda':
+                        terminalOutput.textContent += 'COMANDOS DISPONIVEIS:\n  ajuda      - Mostra esta lista\n  data       - Exibe a data e hora\n  limpar     - Limpa o terminal\n  nav <aba>  - Navega para a secao\n  scan       - Varre o sistema\n  vhs_club   - [SECRETO]\n\n';
                         break;
-                    case 'date':
-                        terminalOutput.textContent += new Date().toLocaleString() + '\n\n';
+                    case 'data':
+                        terminalOutput.textContent += new Date().toLocaleString('pt-BR') + '\n\n';
                         break;
-                    case 'clear':
+                    case 'limpar':
                         terminalOutput.textContent = welcomeMessage;
+                        break;
+                    case 'scan':
+                        const scanLines = [
+                            'INICIANDO VARREDURA DO SISTEMA...',
+                            'ANALISANDO BANCOS DE MEMORIA... 75% COMPLETOS',
+                            'NENHUMA ANOMALIA DETECTADA.',
+                            'VARREDURA COMPLETA. SISTEMA NOMINAL.\n\n'
+                        ];
+                        let i = 0;
+                        function typeScan() {
+                            if (i < scanLines.length) {
+                                terminalOutput.textContent += scanLines[i] + '\n';
+                                i++;
+                                setTimeout(typeScan, 300);
+                            }
+                        }
+                        typeScan();
                         break;
                     case 'nav':
                         const section = args[0];
                         const navItem = document.querySelector(`[data-mem="mem-${section}"]`);
                         if (navItem) {
                             switchMemory(`mem-${section}`);
-                            terminalOutput.textContent += `Navegando para a seção "${section}"...\n\n`;
+                            terminalOutput.textContent += `Navegando para "${section}"...\n\n`;
                         } else {
-                            terminalOutput.textContent += `Erro: Seção "${section}" não encontrada.\n\n`;
+                            terminalOutput.textContent += `ERRO: Secao "${section}" nao encontrada.\n\n`;
                         }
                         break;
+                    case 'vhs_club':
+                        terminalOutput.textContent += 'ACESSO SECRETO CONCEDIDO.\nCARREGANDO FITAS...\n\n';
+                        switchMemory('mem-historias');
+                        showNotification("Fitas secretas encontradas!");
+                        break;
                     default:
-                        terminalOutput.textContent += `Comando "${command}" não reconhecido. Digite "help".\n\n`;
+                        terminalOutput.textContent += `COMANDO "${command}" NAO RECONHECIDO.\n\n`;
                 }
             }
+            
+            function showNotification(message) {
+                const container = document.getElementById('notification-container');
+                const notif = document.createElement('div');
+                notif.className = 'notification pixel-border';
+                notif.textContent = message;
+                container.appendChild(notif);
 
-            // --- Konami Code Easter Egg ---
-            const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-            let konamiIndex = 0;
-            document.addEventListener('keydown', (e) => {
-                if (e.key.toLowerCase() === konamiCode[konamiIndex]) {
-                    konamiIndex++;
-                    if (konamiIndex === konamiCode.length) {
-                        konamiIndex = 0;
-                        starSpeedMultiplier = starSpeedMultiplier === 1 ? 5 : 1; // Toggle speed
-                        initializeStars(); // Re-initialize stars with new speed
-                    }
-                } else {
-                    konamiIndex = 0;
-                }
-            });
+                setTimeout(() => {
+                    notif.remove();
+                }, 5000);
+            }
 
             const changelogContent = document.getElementById('changelog-content');
             const logs = [
                  {
-                    date: '18/07/2025',
+                    date: '19.07.2025',
                     changes: [
-                        'Adicionada animação de boot, cursor personalizado e um easter egg (Konami Code).',
-                        'Adicionada nova seção interativa "Terminal".',
-                        'Ajuste final no enquadramento do banner.'
-                    ]
-                },
-                 {
-                    date: '18/07/2025',
-                    changes: [
-                        'Ajustes de enquadramento nas capas e atualização para "Temporada 1".'
+                        'NOVO: Background híbrido com Plexus + Estrelas Cadentes.',
+                        'NOVO: Efeito Glitch ao passar o mouse no menu.',
+                        'NOVO: Comando "scan" adicionado ao terminal.'
                     ]
                 }
             ];
-            changelogContent.innerHTML = logs.map(log => `
-                <p><span class="text-gray-400">${log.date}:</span><br>
-                ${log.changes.map(change => `- ${change}`).join('<br>')}
-                </p>
-            `).join('');
+            if (changelogContent) {
+                 changelogContent.innerHTML = logs.map(log => `
+                    <p><span class="text-gray-400">${log.date}:</span><br>
+                    ${log.changes.map(change => `* ${change}`).join('<br>')}
+                    </p>
+                `).join('');
+            }
+
+            switchMemory('mem-inicio', true);
         });
     </script>
 
