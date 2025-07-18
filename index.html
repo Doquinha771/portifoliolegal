@@ -1,1 +1,744 @@
-121
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doquinha.DAT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glow-color: hsl(0, 0%, 85%);
+            --background-color: #0a0a10;
+            --text-color: #f9fafb;
+            --text-secondary: #d1d5db;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .vhs-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+
+        /* --- Efeitos VHS e Estrelas --- */
+        #starfield { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        #vhs-tracking-line {
+            position: absolute;
+            top: -10%;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 101;
+            pointer-events: none;
+            animation: tracking 8s infinite steps(10);
+        }
+        @keyframes tracking {
+            0% { top: 20%; }
+            20% { top: 50%; }
+            40% { top: 45%; }
+            60% { top: 80%; }
+            80% { top: 10%; }
+            100% { top: 30%; }
+        }
+
+        /* --- Tela de Início --- */
+        #start-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; height: 100%; position: absolute; z-index: 20; background-color: transparent; text-shadow: 0 0 10px var(--glow-color); transition: opacity 0.5s ease-out; }
+        #start-screen-content { display: none; } /* Inicia oculto */
+        #start-screen.departing { animation: ship-accelerate 1s forwards; }
+        #start-button { font-size: 3rem; padding: 1rem 2rem; border: 2px solid var(--glow-color); background-color: transparent; color: var(--glow-color); cursor: pointer; animation: float 3s infinite ease-in-out; }
+        @keyframes float { 0%, 100% { transform: translateY(0); box-shadow: 0 0 20px var(--glow-color); } 50% { transform: translateY(-10px); box-shadow: 0 15px 30px var(--glow-color); } }
+        @keyframes ship-accelerate { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.5; } 100% { transform: scale(2); opacity: 0; } }
+        
+        /* Animação de Boot */
+        #boot-sequence { font-size: 1.5rem; text-align: left; width: 80%; max-width: 600px; }
+        #boot-sequence p { margin: 0; white-space: nowrap; overflow: hidden; }
+        .typing-cursor::after { content: '█'; animation: blink 1s step-end infinite; }
+
+        /* --- Conteúdo Principal --- */
+        #main-content { width: 100%; height: 100%; display: none; z-index: 5; }
+        .crt-screen { position: relative; width: 100%; height: 100%; background: transparent; overflow: hidden; display: flex; }
+        .crt-screen::before, .crt-screen::after { content: ' '; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0; z-index: 2; pointer-events: none; }
+        .crt-screen::before { background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 4px, 6px 100%; animation: scanline 10s linear infinite; }
+        .crt-screen::after { background: rgba(18, 16, 16, 0.1); opacity: 0; animation: flicker 0.15s infinite; }
+        @keyframes flicker { 0% { opacity: 0.1; } 20% { opacity: 1; } 40% { opacity: 0.3; } 60% { opacity: 0.8; } 80% { opacity: 0.2; } 100% { opacity: 1; } }
+        @keyframes scanline { 0% { transform: translateY(0); } 100% { transform: translateY(100vh); } }
+
+        /* --- Navegação Lateral --- */
+        #side-nav { width: 200px; height: 100%; padding: 4rem 1rem 2rem 1.5rem; border-right: 2px solid var(--glow-color); z-index: 5; flex-shrink: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(2px); }
+        #side-nav ul { list-style: none; padding: 0; margin: 0; }
+        #side-nav li { font-size: 1.5rem; margin-bottom: 0.75rem; cursor: pointer; color: var(--text-secondary); transition: all 0.2s ease; }
+        #side-nav li:hover, #side-nav li.active-link { color: var(--glow-color); text-shadow: 0 0 8px var(--glow-color); }
+        #side-nav li.active-link::before { content: '> '; animation: blink 1s infinite; }
+        #changelog-btn { font-size: 1rem; opacity: 0.5; margin-top: 2rem; }
+        #changelog-btn:hover { opacity: 1; }
+
+        /* --- Conteúdo da Memória --- */
+        .vhs-content { flex-grow: 1; height: 100%; position: relative; padding: 2rem; overflow-y: auto; }
+        .memory { display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; animation: fadeIn 1s ease-in-out; }
+        .memory.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .glitch-text { text-shadow: 0 0 8px var(--glow-color), 1px 1px 1px rgba(255,0,0,0.7), -1px -1px 1px rgba(0,0,255,0.7); }
+
+        .vhs-header { position: absolute; top: 1.5rem; right: 2rem; display: flex; align-items: center; gap: 1rem; font-size: 1.5rem; z-index: 5; text-shadow: 0 0 5px var(--glow-color); }
+        .play-indicator { color: #ff4136; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* --- Seção Sobre Mim Simplificada --- */
+        #profile-pic {
+            width: 200px;
+            height: 200px;
+            border: 3px solid var(--glow-color);
+            background-color: #222;
+            box-shadow: 0 0 15px var(--glow-color);
+            object-fit: cover;
+        }
+
+        /* --- Seção de Projetos com Fitas VHS --- */
+        .projects-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 4rem;
+            perspective: 1000px;
+        }
+        .vhs-tape-wrapper {
+            width: 250px;
+            height: 150px;
+        }
+        .vhs-tape {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: spin-tape 12s infinite linear;
+            cursor: pointer;
+        }
+        @keyframes spin-tape { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+        .tape-face {
+            position: absolute;
+            width: 250px;
+            height: 150px;
+            background-color: #2a2a2a;
+            border: 2px solid #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .front {
+            transform: translateZ(25px);
+            background-color: #3d3d3d;
+            flex-direction: column;
+            padding: 10px;
+        }
+        .back { transform: rotateY(180deg) translateZ(25px); }
+        .tape-label {
+            width: 80%;
+            height: 60%;
+            background-color: #e0e0e0;
+            border: 1px dashed #555;
+            color: #111;
+            font-size: 1.2rem;
+            padding: 5px;
+            text-align: center;
+            text-shadow: none;
+        }
+        .tape-spools {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .spool {
+            width: 40px;
+            height: 40px;
+            background-color: #111;
+            border-radius: 50%;
+            border: 5px solid #2a2a2a;
+        }
+
+        /* --- Seção Histórias (Netflix) --- */
+        .historias-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .featured-episode {
+            width: 100%;
+            height: 40%;
+            background-color: #1a1a1a;
+            border: 2px solid var(--glow-color);
+            margin-bottom: 2rem;
+            background-size: cover;
+            background-position: center 30%; /* Ajustado para subir a imagem */
+        }
+        .episodes-carousel {
+            width: 100%;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+        }
+        .episodes-list {
+            display: flex;
+            gap: 1.5rem;
+            padding: 0 1rem;
+        }
+        .episode-card {
+            flex-shrink: 0;
+            width: 250px;
+            aspect-ratio: 16 / 9;
+            background-color: #1a1a1a;
+            border: 2px solid var(--glow-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            background-size: cover;
+            background-position: center;
+        }
+        .episode-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+        .episode-card .play-icon {
+            position: absolute;
+            font-size: 4rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .episode-card:hover .play-icon {
+            opacity: 0.8;
+        }
+        .episode-card-title {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 1.2rem;
+            background-color: rgba(0,0,0,0.5);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* --- Modal de Episódio --- */
+        #episode-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            z-index: 200;
+            display: none; /* Inicia oculto */
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #0a0a10;
+            border: 2px solid var(--glow-color);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            height: 80%;
+            max-height: 600px;
+            padding: 2rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--glow-color);
+        }
+        #modal-episode-title {
+            margin-bottom: 1rem;
+        }
+        #modal-episode-story {
+            flex-grow: 1;
+            overflow-y: auto;
+            text-align: left;
+            font-size: 1.2rem;
+            line-height: 1.6;
+        }
+
+        /* --- Seção Terminal --- */
+        .terminal-container {
+            width: 100%;
+            height: 100%;
+            background-color: #0a0a10;
+            border: 2px solid var(--glow-color);
+            padding: 1rem;
+            font-size: 1.2rem;
+            line-height: 1.5;
+            overflow-y: auto;
+            text-align: left;
+        }
+        .terminal-output {
+            white-space: pre-wrap;
+        }
+        .terminal-input-line {
+            display: flex;
+        }
+        .terminal-prompt {
+            margin-right: 0.5rem;
+        }
+        .terminal-input {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-color);
+        }
+        
+        /* --- Responsividade --- */
+        @media (max-width: 768px) {
+            .crt-screen { flex-direction: column; }
+            #side-nav { width: 100%; height: auto; display: flex; flex-wrap: wrap; justify-content: center; padding: 1rem; border-right: none; border-bottom: 2px solid var(--glow-color); }
+            #side-nav ul { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem 1rem; }
+            #side-nav li { font-size: 1.2rem; margin-bottom: 0; }
+            .episode-card { width: 200px; }
+            .modal-content { padding: 1rem; }
+            .modal-close { top: 0.5rem; right: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="vhs-container">
+        <canvas id="starfield"></canvas>
+        <div id="vhs-tracking-line"></div>
+
+        <div id="start-screen">
+            <div id="boot-sequence"></div>
+            <div id="start-screen-content">
+                <h1 class="text-7xl mb-8 glitch-text">Doquinha.DAT</h1>
+                <button id="start-button">START</button>
+            </div>
+        </div>
+
+        <div id="main-content">
+            <div class="crt-screen">
+                <nav id="side-nav">
+                    <ul>
+                        <li data-mem="mem-inicio">Início</li>
+                        <li data-mem="mem-sobre">Sobre</li>
+                        <li data-mem="mem-projetos">Projetos</li>
+                        <li data-mem="mem-amigos">Amigos</li>
+                        <li data-mem="mem-historias">Histórias</li>
+                        <li data-mem="mem-terminal">Terminal</li>
+                        <li id="changelog-btn" data-mem="mem-changelogs">Changelogs</li>
+                    </ul>
+                </nav>
+
+                <div class="vhs-content">
+                    <div class="vhs-header">
+                        <span class="play-indicator">▶ REC</span>
+                        <span id="vhs-timestamp" class="timestamp">0000:00:00:00</span>
+                    </div>
+
+                    <div id="mem-inicio" class="memory">
+                        <div class="text-center">
+                            <h1 class="text-8xl mb-4 glitch-text">Dokas</h1>
+                            <p class="text-2xl max-w-lg mx-auto">"se passei pela tristeza, pelo menos posso fazer piadas disso e tirar risadas"</p>
+                            <p class="text-sm opacity-50 mt-8">SYSTEM BOOT DATE: 27/12/2007</p>
+                        </div>
+                    </div>
+
+                    <div id="mem-sobre" class="memory">
+                        <div class="flex flex-col items-center max-w-2xl">
+                            <img id="profile-pic" class="rounded-full mb-8" src="" alt="Foto de perfil">
+                            <div class="text-center text-xl space-y-4">
+                                <p>Carregando dados sobre Doquinha...</p>
+                                <p>Salve meus manos, eu atualizei o portfólio pra ser algo mais simples e mais organizado. Aqui vai ser a minha caixa de pensamentos. Vou atualizando com o tempo, acompanhe o changelogs pra algo.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mem-projetos" class="memory">
+                        <h2 class="text-4xl md:text-6xl mb-12 glitch-text">PROJETOS</h2>
+                        <div class="projects-container">
+                            <a href="https://doquinha771.github.io/memoriesps2/" target="_blank" class="vhs-tape-wrapper">
+                                <div class="vhs-tape">
+                                    <div class="tape-face front">
+                                        <div class="tape-label">Memories PS2</div>
+                                        <div class="tape-spools"><div class="spool"></div><div class="spool"></div></div>
+                                    </div>
+                                    <div class="tape-face back"></div>
+                                </div>
+                            </a>
+                            <a href="https://doquinha771.github.io/SPG/" target="_blank" class="vhs-tape-wrapper">
+                                <div class="vhs-tape">
+                                    <div class="tape-face front">
+                                        <div class="tape-label">SPG Player</div>
+                                        <div class="tape-spools"><div class="spool"></div><div class="spool"></div></div>
+                                    </div>
+                                    <div class="tape-face back"></div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div id="mem-amigos" class="memory">
+                        <div class="flex flex-col items-center max-w-4xl gap-8 p-4">
+                            <img src="https://i.pinimg.com/736x/1a/5f/94/1a5f947d37b4581ce5b05ea0da789846.jpg" class="w-full md:w-2/3 rounded-lg" style="box-shadow: 0 0 15px var(--glow-color);">
+                            <p class="text-xl text-center mt-6">É, rapaziada sou muito grato por todos que estão comigo lado a lado nessa jornada. Desde o Vx, que já tirou do bolso pra me ajudar a comprar um jogo, até a galera do Traki Games, com quem troco papo reto, dou risada e passo horas jogando — vocês são irmãos de verdade. E pra todos que sempre colam pra uma resenha, seja nas ideias ou nas brincadeiras, saibam que vocês são feras demais. Obrigado por serem aliados desse bobo aqui. Tamo junto sempre!</p>
+                        </div>
+                    </div>
+
+                    <div id="mem-historias" class="memory">
+                        <div class="historias-container">
+                            <div id="featured-episode" class="featured-episode" style="background-image: url('https://i.pinimg.com/1200x/f3/ce/59/f3ce59b9a7b7c7f1c145954c255c7e00.jpg');">
+                            </div>
+                            <h2 class="text-2xl mb-4 pl-4 self-start glitch-text">Temporada 1</h2>
+                            <div class="episodes-carousel">
+                                <div id="episodes-list" class="episodes-list">
+                                    <!-- Episódios serão gerados aqui -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mem-terminal" class="memory">
+                        <div class="terminal-container">
+                            <div id="terminal-output" class="terminal-output"></div>
+                            <div class="terminal-input-line">
+                                <span class="terminal-prompt">D:\></span>
+                                <input type="text" id="terminal-input" class="terminal-input" autofocus>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mem-changelogs" class="memory">
+                        <h2 class="text-4xl md:text-6xl mb-6 glitch-text">CHANGELOGS</h2>
+                        <div id="changelog-content" class="text-left max-w-2xl text-xl space-y-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Episódios -->
+        <div id="episode-modal">
+            <div class="modal-content">
+                <span id="modal-close" class="modal-close">&times;</span>
+                <h2 id="modal-episode-title" class="text-3xl"></h2>
+                <div id="modal-episode-story"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const startButton = document.getElementById('start-button');
+            const startScreen = document.getElementById('start-screen');
+            const mainContent = document.getElementById('main-content');
+            
+            const navLinks = document.querySelectorAll('#side-nav li');
+            const memories = document.querySelectorAll('.memory');
+            const timestampEl = document.getElementById('vhs-timestamp');
+            const profilePic = document.getElementById('profile-pic');
+            
+            let activeMemoryId = 'mem-inicio';
+            let gameStarted = false;
+            
+            const canvas = document.getElementById('starfield');
+            const ctx = canvas.getContext('2d');
+            let stars = [];
+            let starSpeedMultiplier = 1;
+
+            function initializeStars() {
+                stars = [];
+                const starCount = window.innerWidth / 4;
+                for (let i = 0; i < starCount; i++) {
+                    stars.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: Math.random() * 2 + 0.5,
+                        speed: (Math.random() * 0.7 + 0.2) * starSpeedMultiplier,
+                        opacity: Math.random() * 0.5 + 0.5
+                    });
+                }
+            }
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                initializeStars();
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            function drawStars() {
+                ctx.fillStyle = 'rgba(10, 10, 16, 0.4)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                stars.forEach(star => {
+                    star.y += star.speed;
+                    if (star.y > canvas.height) {
+                        star.y = 0;
+                        star.x = Math.random() * canvas.width;
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(249, 250, 251, ${star.opacity})`;
+                    ctx.shadowColor = `hsl(0, 0%, 85%)`;
+                    ctx.shadowBlur = 10;
+                    ctx.fill();
+                });
+                
+                ctx.shadowBlur = 0;
+                requestAnimationFrame(drawStars);
+            }
+            drawStars();
+
+            // --- Lógica da Foto de Perfil ---
+            function setProfilePicture() {
+                const today = new Date();
+                const month = today.getMonth(); // 0-indexed: 11 is December
+                const day = today.getDate();
+
+                const defaultPicUrl = 'https://i.pinimg.com/736x/ac/1a/51/ac1a510577d3b779d5353b60f206b5f1.jpg';
+                const christmasPicUrl = 'https://i.pinimg.com/736x/e3/98/57/e39857fcd14405299573cd1324546d56.jpg';
+
+                if (month === 11 && day >= 25) { // December 25th to 31st
+                    profilePic.src = christmasPicUrl;
+                } else {
+                    profilePic.src = defaultPicUrl;
+                }
+            }
+            setProfilePicture();
+
+            // --- Animação de Boot ---
+            const bootLines = [
+                "INITIATING SYSTEM...",
+                "LOADING DOQUINHA.DAT...",
+                "CHECKING MEMORY...",
+                "MEMORY OK.",
+                "LOADING STORIES...",
+                "ALL SYSTEMS GO.",
+            ];
+            const bootSequenceEl = document.getElementById('boot-sequence');
+            const startScreenContent = document.getElementById('start-screen-content');
+            let lineIndex = 0;
+
+            function runBootSequence() {
+                if (lineIndex < bootLines.length) {
+                    const p = document.createElement('p');
+                    p.innerHTML = bootLines[lineIndex] + '<span class="typing-cursor"></span>';
+                    bootSequenceEl.appendChild(p);
+                    if (lineIndex > 0) {
+                        bootSequenceEl.children[lineIndex - 1].querySelector('.typing-cursor').remove();
+                    }
+                    lineIndex++;
+                    setTimeout(runBootSequence, 500 + Math.random() * 300);
+                } else {
+                    setTimeout(() => {
+                        bootSequenceEl.style.display = 'none';
+                        startScreenContent.style.display = 'block';
+                    }, 500);
+                }
+            }
+            runBootSequence();
+
+            startButton.addEventListener('click', async () => {
+                // Efeito sonoro
+                await Tone.start();
+                const synth = new Tone.Synth().toDestination();
+                synth.triggerAttackRelease("C2", "8n");
+
+                startScreen.classList.add('departing');
+                setTimeout(() => {
+                    startScreen.style.display = 'none';
+                    mainContent.style.display = 'block';
+                    gameStarted = true;
+                    setInterval(updateTimestamp, 1000);
+                    switchMemory(activeMemoryId, true);
+                }, 1000);
+            });
+
+            const startDate = new Date('2007-12-27T00:00:00');
+            function updateTimestamp() {
+                if (!gameStarted) return;
+                const now = new Date();
+                const diff = now - startDate;
+                const s = Math.floor(diff / 1000);
+                const m = Math.floor(s / 60);
+                const h = Math.floor(m / 60);
+                const d = Math.floor(h / 24);
+                timestampEl.textContent = `${String(d).padStart(4, '0')}:${String(h % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+            }
+
+            function switchMemory(targetId, isInitial = false) {
+                if (!isInitial && targetId === activeMemoryId) return;
+                memories.forEach(mem => mem.classList.remove('active'));
+                const targetMemory = document.getElementById(targetId);
+                if (targetMemory) {
+                    targetMemory.classList.add('active');
+                    activeMemoryId = targetId;
+                    if (targetId === 'mem-terminal') {
+                        document.getElementById('terminal-input').focus();
+                    }
+                }
+                navLinks.forEach(link => link.classList.toggle('active-link', link.dataset.mem === targetId));
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    switchMemory(link.dataset.mem);
+                });
+            });
+            
+            // --- Lógica de Histórias (Netflix) ---
+            const episodesList = document.getElementById('episodes-list');
+            const episodeModal = document.getElementById('episode-modal');
+            const modalCloseBtn = document.getElementById('modal-close');
+            const modalTitle = document.getElementById('modal-episode-title');
+            const modalStory = document.getElementById('modal-episode-story');
+
+            const episodeData = [
+                { title: 'Pensando em sonhar', story: '', cover: 'https://i.pinimg.com/1200x/40/e9/29/40e92966839f295a9f879017914094c7.jpg', position: 'center' },
+                { title: 'Meio cheio e vazio', story: '', cover: 'https://i.pinimg.com/1200x/8d/95/d7/8d95d79e5174589bc2ec8f9dac4f782a.jpg', position: 'center' },
+                { title: 'Acompanhado', story: '', cover: 'https://i.pinimg.com/1200x/3c/9f/59/3c9f59ae869ef47e164ee3e63cbb12e7.jpg', position: 'center 70%' },
+                { title: 'As noites', story: '', cover: 'https://i.pinimg.com/736x/06/91/b6/0691b6af1d093c6e397eacc82571dc48.jpg', position: 'center' },
+                { title: 'É pra valer', story: '', cover: 'https://i.pinimg.com/736x/01/60/cf/0160cf7402819382f9f7c03b4b968f94.jpg', position: 'center 30%' },
+            ];
+
+            episodeData.forEach((ep, index) => {
+                const card = document.createElement('div');
+                card.className = 'episode-card';
+                card.dataset.index = index;
+                card.style.backgroundImage = `url('${ep.cover}')`;
+                card.style.backgroundPosition = ep.position;
+                card.innerHTML = `
+                    <span class="play-icon">▶</span>
+                    <span class="episode-card-title">${ep.title || `S01E${index + 1}`}</span>
+                `;
+                card.addEventListener('click', () => {
+                    const episode = episodeData[index];
+                    modalTitle.textContent = episode.title || `Episódio ${index + 1}`;
+                    modalStory.textContent = episode.story || 'Relato em breve...';
+                    episodeModal.style.display = 'flex';
+                });
+                episodesList.appendChild(card);
+            });
+
+            function closeModal() {
+                episodeModal.style.display = 'none';
+            }
+
+            modalCloseBtn.addEventListener('click', closeModal);
+            episodeModal.addEventListener('click', (e) => {
+                if (e.target === episodeModal) {
+                    closeModal();
+                }
+            });
+
+            // --- Lógica do Terminal ---
+            const terminalInput = document.getElementById('terminal-input');
+            const terminalOutput = document.getElementById('terminal-output');
+            const welcomeMessage = 'Bem-vindo ao Doquinha.DAT OS [Versão 1.0]\nDigite "help" para ver a lista de comandos.\n\n';
+            terminalOutput.textContent = welcomeMessage;
+
+            terminalInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const command = terminalInput.value.trim().toLowerCase();
+                    terminalOutput.textContent += `D:\\>${command}\n`;
+                    processCommand(command);
+                    terminalInput.value = '';
+                    terminalInput.parentElement.parentElement.scrollTop = terminalInput.parentElement.parentElement.scrollHeight;
+                }
+            });
+
+            function processCommand(command) {
+                const [cmd, ...args] = command.split(' ');
+                switch (cmd) {
+                    case 'help':
+                        terminalOutput.textContent += 'Comandos disponíveis:\n  help      - Mostra esta lista\n  date      - Exibe a data e hora atuais\n  clear     - Limpa a tela do terminal\n  nav <aba> - Navega para a seção especificada (ex: nav sobre)\n\n';
+                        break;
+                    case 'date':
+                        terminalOutput.textContent += new Date().toLocaleString() + '\n\n';
+                        break;
+                    case 'clear':
+                        terminalOutput.textContent = welcomeMessage;
+                        break;
+                    case 'nav':
+                        const section = args[0];
+                        const navItem = document.querySelector(`[data-mem="mem-${section}"]`);
+                        if (navItem) {
+                            switchMemory(`mem-${section}`);
+                            terminalOutput.textContent += `Navegando para a seção "${section}"...\n\n`;
+                        } else {
+                            terminalOutput.textContent += `Erro: Seção "${section}" não encontrada.\n\n`;
+                        }
+                        break;
+                    default:
+                        terminalOutput.textContent += `Comando "${command}" não reconhecido. Digite "help".\n\n`;
+                }
+            }
+
+            // --- Konami Code Easter Egg ---
+            const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+            let konamiIndex = 0;
+            document.addEventListener('keydown', (e) => {
+                if (e.key.toLowerCase() === konamiCode[konamiIndex]) {
+                    konamiIndex++;
+                    if (konamiIndex === konamiCode.length) {
+                        konamiIndex = 0;
+                        starSpeedMultiplier = starSpeedMultiplier === 1 ? 5 : 1; // Toggle speed
+                        initializeStars(); // Re-initialize stars with new speed
+                    }
+                } else {
+                    konamiIndex = 0;
+                }
+            });
+
+            const changelogContent = document.getElementById('changelog-content');
+            const logs = [
+                 {
+                    date: '18/07/2025',
+                    changes: [
+                        'Adicionada animação de boot, cursor personalizado e um easter egg (Konami Code).',
+                        'Adicionada nova seção interativa "Terminal".',
+                        'Ajuste final no enquadramento do banner.'
+                    ]
+                },
+                 {
+                    date: '18/07/2025',
+                    changes: [
+                        'Ajustes de enquadramento nas capas e atualização para "Temporada 1".'
+                    ]
+                }
+            ];
+            changelogContent.innerHTML = logs.map(log => `
+                <p><span class="text-gray-400">${log.date}:</span><br>
+                ${log.changes.map(change => `- ${change}`).join('<br>')}
+                </p>
+            `).join('');
+        });
+    </script>
+
+</body>
+</html>
